@@ -42,4 +42,18 @@ public class StudentViewController {
         studentService.deleteStudent(id);
         return "redirect:/students/list";
     }
+
+    @GetMapping("/edit/{id}")
+    public String showEditStudentForm(@PathVariable Long id, Model model) {
+        Student student = studentService.getStudentById(id);
+        model.addAttribute("student", student);
+        return "student/edit-student";
+    }
+
+    @PostMapping("/update/{id}")
+    public String updateStudent(@PathVariable Long id, @ModelAttribute("student") Student student) {
+        student.setId(id);
+        studentService.saveStudent(student);
+        return "redirect:/students/list";
+    }
 }

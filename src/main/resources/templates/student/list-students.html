@@ -21,7 +21,9 @@
         <td th:text="${student.firstName}"></td>
         <td th:text="${student.lastName}"></td>
         <td>
-            <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post">
+            <a th:href="@{/students/edit/{id}(id=${student.id})}">Edit</a>
+            &nbsp;
+            <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post" style="display:inline;">
                 <button type="submit">Delete</button>
             </form>
         </td>
