@@ -6,7 +6,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.List;
 
 @Controller
 @RequestMapping("/students")
@@ -24,7 +27,19 @@ public class StudentViewController {
     @PostMapping("/create")
     public String createStudent(@ModelAttribute Student student) {
         studentService.saveStudent(student);
-        // Пока перенаправляем на главную страницу, позже будет список студентов
-        return "redirect:/";
+        return "redirect:/students/list";
+    }
+
+    @GetMapping("/list")
+    public String showStudentList(Model model) {
+        List<Student> students = studentService.getAllStudents();
+        model.addAttribute("students", students);
+        return "student/list-students";
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteStudent(@PathVariable Long id) {
+        studentService.deleteStudent(id);
+        return "redirect:/students/list";
     }
 }
