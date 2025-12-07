@@ -37,6 +37,14 @@ public class StudentViewController {
         return "student/list-students";
     }
 
+    /**
+     * Handles the deletion of a student.
+     * Uses POST instead of DELETE due to HTML form limitations, as standard HTML forms
+     * only natively support GET and POST methods for form submissions.
+     *
+     * @param id The ID of the student to delete.
+     * @return A redirect to the student list page.
+     */
     @PostMapping("/delete/{id}")
     public String deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
@@ -55,5 +63,12 @@ public class StudentViewController {
         student.setId(id);
         studentService.saveStudent(student);
         return "redirect:/students/list";
+    }
+
+    @GetMapping("/profile/{id}")
+    public String showStudentProfile(@PathVariable Long id, Model model) {
+        Student student = studentService.getStudentById(id);
+        model.addAttribute("student", student);
+        return "student/student-profile";
     }
 }

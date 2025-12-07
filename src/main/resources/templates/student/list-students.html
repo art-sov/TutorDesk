@@ -23,6 +23,8 @@
         <td>
             <a th:href="@{/students/edit/{id}(id=${student.id})}">Edit</a>
             &nbsp;
+            <a th:href="@{/students/profile/{id}(id=${student.id})}">View Profile</a>
+            &nbsp;
             <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post" style="display:inline;">
                 <button type="submit">Delete</button>
             </form>
