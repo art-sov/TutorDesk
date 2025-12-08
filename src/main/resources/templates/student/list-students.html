@@ -9,7 +9,7 @@
 <body class="list-students-page">
 <div class="container list-students-page">
     <h1>All Students</h1>
-    <a href="/students/new" class="btn btn-primary btn-add-student">Add New Student</a>
+    <a href="/students/new" class="btn btn-primary btn-add">Add New Student</a>
     <table>
         <thead>
         <tr>
@@ -19,11 +19,14 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="student : ${students}" th:attr="onclick=|window.location.href='@{/students/profile/{id}(id=${student.id})}'|" class="clickable-row">
+        <tr th:each="student : ${students}"
+            th:attr="onclick=|window.location.href='@{/students/profile/{id}(id=${student.id})}'|"
+            class="clickable-row">
             <td th:text="${student.firstName}"></td>
             <td th:text="${student.lastName}"></td>
             <td>
-                <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post" onsubmit="return confirm('Are you sure you want to delete this student?');">
+                <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post"
+                      onsubmit="return confirm('Are you sure you want to delete this student?');">
                     <button type="submit" class="table-action-btn" onclick="event.stopPropagation();">Delete</button>
                 </form>
             </td>

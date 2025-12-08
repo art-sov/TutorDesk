@@ -9,6 +9,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -19,6 +20,8 @@ import java.util.Set;
 @Entity
 @Table(name = "lessons")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Lesson {
 
     @Id
@@ -30,6 +33,7 @@ public class Lesson {
     private LocalTime endTime;
     private String topic;
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 

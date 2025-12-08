@@ -193,7 +193,18 @@ body.list-students-page {
     background: rgba(0, 0, 0, 0.5); /* Slightly different transparency here */
     padding: 30px 40px;
 }
-a.btn-add-student { /* Specific button for add student */
+
+/* Adjustments for list-lessons page */
+body.list-lessons-page {
+    padding: 40px 20px;
+}
+.container.list-lessons-page {
+    max-width: 1200px; /* Increased max-width for better table display */
+    margin: 0 auto;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 30px 40px;
+}
+a.btn-add { /* Specific button for add entity */
     margin-bottom: 20px;
 }
 a.btn-secondary-action { /* Specific class for view profile/edit buttons in table */
