@@ -19,23 +19,18 @@
                 <th>Topic</th>
                 <th>Students Count</th>
                 <th>Payment Status</th>
-                <th>Actions</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:each="lesson : ${lessons}">
+            <tr th:each="lesson : ${lessons}"
+                th:attr="onclick=|window.location.href='@{/lessons/edit/{id}(id=${lesson.id})}'|"
+                class="clickable-row">
                 <td th:text="${lesson.lessonDate}"></td>
                 <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')} + ' - ' + ${#temporals.format(lesson.endTime, 'HH:mm')}"></td>
                 <td th:text="${lesson.topic}"></td>
                 <td th:text="${lesson.lessonStudents != null ? lesson.lessonStudents.size() : 0}"></td>
                 <!-- Payment Status will be dynamic, for now just placeholder -->
                 <td><span th:text="${'N/A'}"></span></td>
-                <td>
-                    <a th:href="@{/lessons/edit/{id}(id=${lesson.id})}" class="btn btn-secondary-action">Edit</a>
-                    <form th:action="@{/lessons/delete/{id}(id=${lesson.id})}" method="post" style="display:inline;">
-                        <button type="submit" class="btn table-action-btn">Delete</button>
-                    </form>
-                </td>
             </tr>
             </tbody>
         </table>
