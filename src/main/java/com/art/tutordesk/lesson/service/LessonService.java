@@ -26,6 +26,11 @@ public class LessonService {
         return lessonRepository.findAllWithStudentsSorted();
     }
 
+    public Lesson getLessonById(Long id) {
+        return lessonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
+    }
+
     @Transactional
     public Lesson saveLesson(Lesson lesson, List<Long> selectedStudentIds) {
         // 1. Save the Lesson first to get its ID
@@ -46,6 +51,11 @@ public class LessonService {
         // Refresh the saved lesson to ensure its lessonStudents collection is up-to-date in the current session
         // This might be necessary if the save logic within lessonStudentService doesn't automatically update the lesson's collection
         return lessonRepository.findById(savedLesson.getId()).orElse(savedLesson);
+    }
+
+    @Transactional
+    public void deleteLesson(Long id) {
+        lessonRepository.deleteById(id);
     }
 
     private LessonStudent createLessonStudent(Student student, Lesson savedLesson) {

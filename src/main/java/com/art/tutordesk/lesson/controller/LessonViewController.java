@@ -8,9 +8,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -40,6 +42,20 @@ public class LessonViewController {
     public String createLesson(@ModelAttribute Lesson lesson,
                                @RequestParam(value = "selectedStudentIds", required = false) List<Long> selectedStudentIds) {
         lessonService.saveLesson(lesson, selectedStudentIds);
+        return "redirect:/lessons/list";
+    }
+
+    @GetMapping("/profile/{id}") // Changed from /edit/{id} to /profile/{id}
+    public String showLessonProfile(@PathVariable Long id, Model model) {
+        Lesson lesson = lessonService.getLessonById(id);
+        model.addAttribute("lesson", lesson);
+        return "lesson/lesson-profile"; // Returning the new profile page
+    }
+
+    @PostMapping("/delete/{id}")
+    public String deleteLesson(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        lessonService.deleteLesson(id);
+        redirectAttributes.addFlashAttribute("message", "Lesson deleted successfully!");
         return "redirect:/lessons/list";
     }
 }
