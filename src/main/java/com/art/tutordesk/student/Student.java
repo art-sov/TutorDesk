@@ -1,16 +1,22 @@
 package com.art.tutordesk.student;
 
+import com.art.tutordesk.lesson.LessonStudent;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
+import java.util.HashSet;
+import java.util.Set;
+
+@Data
 @Entity
 @Table(name = "students")
-@Data
 public class Student {
 
     @Id
@@ -24,5 +30,8 @@ public class Student {
     @Column(columnDefinition = "TEXT")
     private String globalGoal;
     private Integer age;
+
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<LessonStudent> lessonStudents = new HashSet<>();
 }
 

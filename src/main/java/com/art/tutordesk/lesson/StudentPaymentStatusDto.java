@@ -1,4 +1,4 @@
-package com.art.tutordesk.lesson.dto;
+package com.art.tutordesk.lesson;
 
 public class StudentPaymentStatusDto {
 }
