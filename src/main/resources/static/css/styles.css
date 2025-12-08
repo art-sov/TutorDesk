@@ -154,6 +154,14 @@ button.table-action-btn:hover, button.table-action-btn:focus {
     color: #ffb997;
 }
 
+.clickable-row {
+    cursor: pointer;
+}
+
+.clickable-row:hover {
+    background: rgba(255, 255, 255, 0.15); /* Slightly darker on hover */
+}
+
 /* Index page specific adjustments */
 body.index-page {
     height: 100vh;

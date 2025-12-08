@@ -19,14 +19,12 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="student : ${students}">
+        <tr th:each="student : ${students}" th:attr="onclick=|window.location.href='@{/students/profile/{id}(id=${student.id})}'|" class="clickable-row">
             <td th:text="${student.firstName}"></td>
             <td th:text="${student.lastName}"></td>
             <td>
-                <a th:href="@{/students/edit/{id}(id=${student.id})}" class="btn-secondary-action">Edit</a>
-                <a th:href="@{/students/profile/{id}(id=${student.id})}" class="btn-secondary-action">View Profile</a>
                 <form th:action="@{/students/delete/{id}(id=${student.id})}" th:method="post" onsubmit="return confirm('Are you sure you want to delete this student?');">
-                    <button type="submit" class="table-action-btn">Delete</button>
+                    <button type="submit" class="table-action-btn" onclick="event.stopPropagation();">Delete</button>
                 </form>
             </td>
         </tr>
