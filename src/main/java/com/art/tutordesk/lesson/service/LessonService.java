@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,7 +45,7 @@ public class LessonService {
                 Student student = studentService.getStudentById(studentId);
 
                 // Create and save LessonStudent association
-                LessonStudent lessonStudent = createLessonStudent(student, savedLesson);
+                LessonStudent lessonStudent = createLessonStudent(student, savedLesson, PaymentStatus.UNPAID); // Call overloaded method
                 lessonStudentService.save(lessonStudent);
             }
         }
@@ -54,15 +56,65 @@ public class LessonService {
     }
 
     @Transactional
+    public Lesson updateLesson(Lesson lesson, List<Long> selectedStudentIds) {
+        // 1. Retrieve the existing lesson
+        Lesson existingLesson = lessonRepository.findById(lesson.getId())
+                .orElseThrow(() -> new RuntimeException("Lesson not found for update with id: " + lesson.getId()));
+
+        // Store current payment statuses for existing lessonStudents before clearing
+        Map<Long, PaymentStatus> existingStudentPaymentStatuses = existingLesson.getLessonStudents().stream()
+                .collect(Collectors.toMap(
+                        ls -> ls.getStudent().getId(),
+                        LessonStudent::getPaymentStatus,
+                        (oldValue, newValue) -> oldValue // Handle duplicate student IDs if somehow present, keep old status
+                ));
+
+        // 2. Update fields from the provided lesson object
+        existingLesson.setLessonDate(lesson.getLessonDate());
+        existingLesson.setStartTime(lesson.getStartTime());
+        existingLesson.setEndTime(lesson.getEndTime());
+        existingLesson.setTopic(lesson.getTopic());
+
+        // 3. Clear existing lessonStudents associations.
+        // Due to orphanRemoval=true, these will be deleted from the database.
+        existingLesson.getLessonStudents().clear(); // This will trigger deletion
+        Lesson updatedLesson = lessonRepository.save(existingLesson); // Save the updated lesson and trigger deletion of old associations
+
+        // 4. Associate new/re-associated students
+        if (!CollectionUtils.isEmpty(selectedStudentIds)) {
+            for (Long studentId : selectedStudentIds) {
+                Student student = studentService.getStudentById(studentId);
+                
+                // Determine payment status: use existing if student was already associated, otherwise UNPAID
+                PaymentStatus paymentStatus = existingStudentPaymentStatuses.getOrDefault(studentId, PaymentStatus.UNPAID);
+
+                // Create and save LessonStudent association
+                LessonStudent lessonStudent = createLessonStudent(student, updatedLesson, paymentStatus);
+                lessonStudentService.save(lessonStudent);
+                
+                // Add to the lesson's collection for consistency within the transaction
+                updatedLesson.getLessonStudents().add(lessonStudent);
+            }
+        }
+
+        return updatedLesson;
+    }
+
+    @Transactional
     public void deleteLesson(Long id) {
         lessonRepository.deleteById(id);
     }
 
-    private LessonStudent createLessonStudent(Student student, Lesson savedLesson) {
+    private LessonStudent createLessonStudent(Student student, Lesson savedLesson, PaymentStatus paymentStatus) {
         LessonStudent lessonStudent = new LessonStudent();
         lessonStudent.setLesson(savedLesson);
         lessonStudent.setStudent(student);
-        lessonStudent.setPaymentStatus(PaymentStatus.UNPAID); // Default status for new enrollments
+        lessonStudent.setPaymentStatus(paymentStatus);
         return lessonStudent;
+    }
+
+    // Overload for saveLesson to maintain consistency
+    private LessonStudent createLessonStudent(Student student, Lesson savedLesson) {
+        return createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
     }
 }
