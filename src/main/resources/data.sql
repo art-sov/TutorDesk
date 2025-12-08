@@ -6,22 +6,22 @@ INSERT INTO students (first_name, last_name, knowledge_level, country, phone_num
 ('Mohammed', 'Ali', 'C2', 'Egypt', '+20-2-555-0145', 'Achieve near-native fluency for a translation job', 31);
 
 -- Inserting Lessons (dates are relative to CURRENT_DATE)
-INSERT INTO lessons (lesson_date, start_time, end_time, topic) VALUES
-(DATEADD('DAY', -2, CURRENT_DATE()), '10:00:00', '11:00:00', 'English Basics - Part 1'),
-(DATEADD('DAY', -2, CURRENT_DATE()), '11:30:00', '12:30:00', 'Grammar Review - Nouns'),
-(DATEADD('DAY', -2, CURRENT_DATE()), '14:00:00', '15:00:00', 'Conversation Practice A'),
-(DATEADD('DAY', -1, CURRENT_DATE()), '10:00:00', '11:00:00', 'English Basics - Part 2'),
-(DATEADD('DAY', -1, CURRENT_DATE()), '11:30:00', '12:30:00', 'Grammar Review - Verbs'),
-(DATEADD('DAY', -1, CURRENT_DATE()), '14:00:00', '15:00:00', 'Conversation Practice B'),
-(CURRENT_DATE(), '10:00:00', '11:00:00', 'Current Events Discussion'),
-(CURRENT_DATE(), '11:30:00', '12:30:00', 'Pronunciation Workshop'),
-(CURRENT_DATE(), '14:00:00', '15:00:00', 'Business English Intro'),
-(DATEADD('DAY', 1, CURRENT_DATE()), '10:00:00', '11:00:00', 'Future Tenses Deep Dive'),
-(DATEADD('DAY', 1, CURRENT_DATE()), '11:30:00', '12:30:00', 'Idioms and Phrasal Verbs'),
-(DATEADD('DAY', 1, CURRENT_DATE()), '14:00:00', '15:00:00', 'Writing Skills: Email'),
-(DATEADD('DAY', 2, CURRENT_DATE()), '10:00:00', '11:00:00', 'Presentation Skills'),
-(DATEADD('DAY', 2, CURRENT_DATE()), '11:30:00', '12:30:00', 'TOEFL Preparation'),
-(DATEADD('DAY', 2, CURRENT_DATE()), '14:00:00', '15:00:00', 'General English Practice');
+INSERT INTO lessons (lesson_date, start_time, topic) VALUES
+(DATEADD('DAY', -2, CURRENT_DATE()), '10:00:00', 'English Basics - Part 1'),
+(DATEADD('DAY', -2, CURRENT_DATE()), '11:30:00', 'Grammar Review - Nouns'),
+(DATEADD('DAY', -2, CURRENT_DATE()), '14:00:00', 'Conversation Practice A'),
+(DATEADD('DAY', -1, CURRENT_DATE()), '10:00:00', 'English Basics - Part 2'),
+(DATEADD('DAY', -1, CURRENT_DATE()), '11:30:00', 'Grammar Review - Verbs'),
+(DATEADD('DAY', -1, CURRENT_DATE()), '14:00:00', 'Conversation Practice B'),
+(CURRENT_DATE(), '10:00:00', 'Current Events Discussion'),
+(CURRENT_DATE(), '11:30:00', 'Pronunciation Workshop'),
+(CURRENT_DATE(), '14:00:00', 'Business English Intro'),
+(DATEADD('DAY', 1, CURRENT_DATE()), '10:00:00', 'Future Tenses Deep Dive'),
+(DATEADD('DAY', 1, CURRENT_DATE()), '11:30:00', 'Idioms and Phrasal Verbs'),
+(DATEADD('DAY', 1, CURRENT_DATE()), '14:00:00', 'Writing Skills: Email'),
+(DATEADD('DAY', 2, CURRENT_DATE()), '10:00:00', 'Presentation Skills'),
+(DATEADD('DAY', 2, CURRENT_DATE()), '11:30:00', 'TOEFL Preparation'),
+(DATEADD('DAY', 2, CURRENT_DATE()), '14:00:00', 'General English Practice');
 
 -- Inserting into lesson_student (lesson_id, student_id, payment_status)
 -- Distribution: ~50% PAID, ~25% PARTIALLY_PAID, ~25% UNPAID

@@ -30,7 +30,6 @@ public class Lesson {
 
     private LocalDate lessonDate;
     private LocalTime startTime;
-    private LocalTime endTime;
     private String topic;
 
     @EqualsAndHashCode.Exclude

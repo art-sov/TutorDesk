@@ -26,7 +26,7 @@
                 th:attr="onclick=|window.location.href='@{/lessons/profile/{id}(id=${lesson.id})}'|"
                 class="clickable-row">
                 <td th:text="${lesson.lessonDate}"></td>
-                <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')} + ' - ' + ${#temporals.format(lesson.endTime, 'HH:mm')}"></td>
+                <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')}"></td>
                 <td th:text="${lesson.topic}"></td>
                 <td>
                     <div th:each="lessonStudent : ${lesson.lessonStudents}">

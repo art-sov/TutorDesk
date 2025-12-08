@@ -72,7 +72,6 @@ public class LessonService {
         // 2. Update fields from the provided lesson object
         existingLesson.setLessonDate(lesson.getLessonDate());
         existingLesson.setStartTime(lesson.getStartTime());
-        existingLesson.setEndTime(lesson.getEndTime());
         existingLesson.setTopic(lesson.getTopic());
 
         // 3. Clear existing lessonStudents associations.
