@@ -24,6 +24,11 @@ public class PaymentService {
     }
 
     @Transactional
+    public Payment savePayment(Payment payment) {
+        return paymentRepository.save(payment);
+    }
+
+    @Transactional
     public void deletePayment(Long id) {
         paymentRepository.deleteById(id);
     }

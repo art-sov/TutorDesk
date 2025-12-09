@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Payment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h1>Edit Payment</h1>
+    <form th:action="@{/payments/update/{id}(id=${payment.id})}" th:object="${payment}" method="post">
+        <div class="mb-3">
+            <label for="paymentDate" class="form-label">Payment Date:</label>
+            <input type="date" id="paymentDate" th:field="*{paymentDate}" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label for="student" class="form-label">Student:</label>
+            <select id="student" th:field="*{student.id}" class="form-control" required>
+                <option th:each="student : ${students}"
+                        th:value="${student.id}"
+                        th:text="${student.firstName + ' ' + student.lastName}"
+                        th:selected="${student.id == payment.student.id}">
+                    Student Name
+                </option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="amount" class="form-label">Amount:</label>
+            <input type="number" id="amount" th:field="*{amount}" class="form-control" step="0.01" required>
+        </div>
+        <div class="mb-3">
+            <label for="currency" class="form-label">Currency:</label>
+            <select id="currency" th:field="*{currency}" class="form-control" required>
+                <option th:each="currency : ${currencies}"
+                        th:value="${currency}"
+                        th:text="${currency}"
+                        th:selected="${currency == payment.currency}">
+                    Currency
+                </option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label for="paymentMethod" class="form-label">Payment Method:</label>
+            <select id="paymentMethod" th:field="*{paymentMethod}" class="form-control" required>
+                <option th:each="method : ${paymentMethods}"
+                        th:value="${method}"
+                        th:text="${method}"
+                        th:selected="${method == payment.paymentMethod}">
+                    Payment Method
+                </option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Payment</button>
+        <a th:href="@{/payments/profile/{id}(id=${payment.id})}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+</body>
+</html>
