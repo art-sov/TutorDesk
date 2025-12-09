@@ -225,3 +225,36 @@ a.btn-profile-action {
     margin-top: 15px;
     margin-right: 10px;
 }
+
+/* Payment Status Colors */
+.status-paid {
+    background-color: #28a745; /* Green */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.status-partially_paid {
+    background-color: #fd7e14; /* Orange */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.status-unpaid {
+    background-color: #dc3545; /* Red */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.status-free {
+    background-color: #007bff; /* Blue */
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    display: inline-block;
+}

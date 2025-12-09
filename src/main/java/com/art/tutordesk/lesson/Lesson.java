@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -36,7 +37,6 @@ public class Lesson {
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 
-    // Payment status will be derived from individual student payments for this lesson,
-    // or managed through a dedicated LessonStudent join entity later if needed.
-    // It's not a direct field on the Lesson entity itself due to its multi-student dependency.
+    @Transient
+    private PaymentStatus paymentStatus;
 }

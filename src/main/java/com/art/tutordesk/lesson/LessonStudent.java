@@ -1,7 +1,7 @@
 package com.art.tutordesk.lesson;
 
-import com.art.tutordesk.payment.PaymentStatus;
 import com.art.tutordesk.student.Student;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -38,5 +38,6 @@ public class LessonStudent {
     private Student student;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status")
     private PaymentStatus paymentStatus; // Status of payment for this specific student in this lesson
 }

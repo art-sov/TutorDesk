@@ -37,11 +37,11 @@ INSERT INTO lesson_student (lesson_id, student_id, payment_status) VALUES
 (7, 3, 'PAID'), (7, 4, 'PAID'),
 (8, 5, 'PAID'), (8, 1, 'PAID'),
 -- Lessons 9-11: PARTIALLY_PAID (6 entries)
-(9, 2, 'PARTIALLY_PAID'), (9, 3, 'PARTIALLY_PAID'),
-(10, 4, 'PARTIALLY_PAID'), (10, 5, 'PARTIALLY_PAID'),
-(11, 1, 'PARTIALLY_PAID'), (11, 2, 'PARTIALLY_PAID'),
+(9, 2, 'PAID'), (9, 3, 'FREE'),
+(10, 4, 'FREE'), (10, 5, 'FREE'),
+(11, 1, 'UNPAID'), (11, 2, 'FREE'),
 -- Lessons 12-15: UNPAID (8 entries)
-(12, 3, 'UNPAID'), (12, 4, 'UNPAID'),
-(13, 5, 'UNPAID'), (13, 1, 'UNPAID'),
+(12, 3, 'PAID'), (12, 4, 'UNPAID'),
+(13, 5, 'UNPAID'), (13, 1, 'PAID'),
 (14, 2, 'UNPAID'), (14, 3, 'UNPAID'),
 (15, 4, 'UNPAID'), (15, 5, 'UNPAID');

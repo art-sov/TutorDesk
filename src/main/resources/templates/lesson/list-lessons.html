@@ -33,8 +33,12 @@
                         <span th:text="${lessonStudent.student.firstName + ' ' + lessonStudent.student.lastName}"></span>
                     </div>
                 </td>
-                <!-- Payment Status will be dynamic, for now just placeholder -->
-                <td><span th:text="${'N/A'}"></span></td>
+                <td>
+                    <span th:if="${lesson.paymentStatus != null}"
+                          th:text="${lesson.paymentStatus.name()}"
+                          th:classappend="${'status-' + lesson.paymentStatus.name().toLowerCase()}">
+                    </span>
+                </td>
             </tr>
             </tbody>
         </table>

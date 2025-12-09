@@ -3,7 +3,8 @@ package com.art.tutordesk.lesson.service;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.payment.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -22,15 +23,23 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final StudentService studentService;
     private final LessonStudentService lessonStudentService;
-
+    private final PaymentStatusUtil paymentStatusUtil;
 
     public List<Lesson> getAllLessonsSorted() {
-        return lessonRepository.findAllWithStudentsSorted();
+        List<Lesson> lessons = lessonRepository.findAllWithStudentsSorted();
+        lessons.forEach(lesson -> {
+            PaymentStatus paymentStatus = paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents());
+            lesson.setPaymentStatus(paymentStatus);
+        });
+        return lessons;
     }
 
     public Lesson getLessonById(Long id) {
-        return lessonRepository.findById(id)
+        Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
+        PaymentStatus paymentStatus = paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents());
+        lesson.setPaymentStatus(paymentStatus);
+        return lesson;
     }
 
     @Transactional
@@ -45,8 +54,7 @@ public class LessonService {
                 Student student = studentService.getStudentById(studentId);
 
                 // Create and save LessonStudent association
-                LessonStudent lessonStudent = createLessonStudent(student, savedLesson, PaymentStatus.UNPAID); // Call overloaded method
-                lessonStudentService.save(lessonStudent);
+                lessonStudentService.createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
             }
         }
 
@@ -64,7 +72,7 @@ public class LessonService {
         // Store current payment statuses for existing lessonStudents before clearing
         Map<Long, PaymentStatus> existingStudentPaymentStatuses = existingLesson.getLessonStudents().stream()
                 .collect(Collectors.toMap(
-                        ls -> ls.getStudent().getId(),
+                        lessonStudent -> lessonStudent.getStudent().getId(),
                         LessonStudent::getPaymentStatus,
                         (oldValue, newValue) -> oldValue // Handle duplicate student IDs if somehow present, keep old status
                 ));
@@ -88,11 +96,7 @@ public class LessonService {
                 PaymentStatus paymentStatus = existingStudentPaymentStatuses.getOrDefault(studentId, PaymentStatus.UNPAID);
 
                 // Create and save LessonStudent association
-                LessonStudent lessonStudent = createLessonStudent(student, updatedLesson, paymentStatus);
-                lessonStudentService.save(lessonStudent);
-                
-                // Add to the lesson's collection for consistency within the transaction
-                updatedLesson.getLessonStudents().add(lessonStudent);
+                lessonStudentService.createLessonStudent(student, updatedLesson, paymentStatus);
             }
         }
 
@@ -102,18 +106,5 @@ public class LessonService {
     @Transactional
     public void deleteLesson(Long id) {
         lessonRepository.deleteById(id);
-    }
-
-    private LessonStudent createLessonStudent(Student student, Lesson savedLesson, PaymentStatus paymentStatus) {
-        LessonStudent lessonStudent = new LessonStudent();
-        lessonStudent.setLesson(savedLesson);
-        lessonStudent.setStudent(student);
-        lessonStudent.setPaymentStatus(paymentStatus);
-        return lessonStudent;
-    }
-
-    // Overload for saveLesson to maintain consistency
-    private LessonStudent createLessonStudent(Student student, Lesson savedLesson) {
-        return createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
     }
 }
