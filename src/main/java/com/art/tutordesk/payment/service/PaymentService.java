@@ -4,6 +4,7 @@ import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.payment.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -20,5 +21,10 @@ public class PaymentService {
     public Payment getPaymentById(Long id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found with id: " + id));
+    }
+
+    @Transactional
+    public void deletePayment(Long id) {
+        paymentRepository.deleteById(id);
     }
 }
