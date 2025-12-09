@@ -1,5 +1,6 @@
 package com.art.tutordesk.student;
 
+import com.art.tutordesk.payment.Currency; // Import Currency enum
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -21,6 +22,7 @@ public class StudentViewController {
     @GetMapping("/new")
     public String showAddStudentForm(Model model) {
         model.addAttribute("student", new Student());
+        model.addAttribute("currencies", Currency.values()); // Add currencies to model
         return "student/add-student";
     }
 
@@ -55,6 +57,7 @@ public class StudentViewController {
     public String showEditStudentForm(@PathVariable Long id, Model model) {
         Student student = studentService.getStudentById(id);
         model.addAttribute("student", student);
+        model.addAttribute("currencies", Currency.values()); // Add currencies to model
         return "student/edit-student";
     }
 

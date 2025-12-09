@@ -1,9 +1,12 @@
 package com.art.tutordesk.student;
 
 import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.payment.Currency; // Import Currency enum
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType; // Import EnumType
+import jakarta.persistence.Enumerated; // Import Enumerated
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,6 +15,7 @@ import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal; // Import BigDecimal
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,6 +35,11 @@ public class Student {
     @Column(columnDefinition = "TEXT")
     private String globalGoal;
     private Integer age;
+
+    private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
 
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -19,7 +19,8 @@
             <p class="card-text"><strong>Knowledge Level:</strong> <span th:text="${student.knowledgeLevel}"></span></p>
             <p class="card-text"><strong>Country:</strong> <span th:text="${student.country}"></span></p>
             <p class="card-text"><strong>Phone Number:</strong> <span th:text="${student.phoneNumber}"></span></p>
-            <p class="card-text"><strong>Global Goal:</strong> <span th:text="${student.globalGoal}"></span></p>
+            <p class="card-text"><strong>Goal:</strong> <span th:text="${student.globalGoal}"></span></p>
+            <p class="card-text"><strong>Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.price, 1, 0)}"></span></p>
         </div>
     </div>
     <a th:href="@{/students/edit/{id}(id=${student.id})}" class="btn btn-primary btn-profile-action">Update Student</a>
