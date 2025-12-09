@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -18,5 +19,11 @@ public class PaymentViewController {
     public String listPayments(Model model) {
         model.addAttribute("payments", paymentService.getAllPayments());
         return "payment/list-payments";
+    }
+
+    @GetMapping("/profile/{id}")
+    public String viewPaymentProfile(@PathVariable Long id, Model model) {
+        model.addAttribute("payment", paymentService.getPaymentById(id));
+        return "payment/payment-profile";
     }
 }

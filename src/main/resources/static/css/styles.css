@@ -216,8 +216,11 @@ a.btn-secondary-action:hover, a.btn-secondary-action:focus {
     background: #777;
 }
 
-/* Adjustments for student-profile page */
-.container.student-profile-page {
+/* Adjustments for profile pages */
+body.profile-page {
+    padding: 40px 20px;
+}
+.container.profile-page {
     max-width: 600px;
 }
 a.btn-profile-action {
