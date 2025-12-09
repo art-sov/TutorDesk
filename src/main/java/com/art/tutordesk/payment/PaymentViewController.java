@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.time.LocalDate; // Added import
+import java.time.LocalDate;
 import java.util.List;
 
 @Controller
@@ -38,7 +38,7 @@ public class PaymentViewController {
     public String addPaymentForm(Model model) {
         Payment payment = new Payment();
         payment.setPaymentDate(LocalDate.now()); // Set default date
-        List<Student> students = studentService.getAllStudents();
+        List<Student> students = studentService.getAllActiveStudents();
         model.addAttribute("payment", payment);
         model.addAttribute("students", students);
         model.addAttribute("paymentMethods", PaymentMethod.values());
@@ -60,7 +60,7 @@ public class PaymentViewController {
     @GetMapping("/edit/{id}")
     public String editPaymentForm(@PathVariable Long id, Model model) {
         Payment payment = paymentService.getPaymentById(id);
-        List<Student> students = studentService.getAllStudents();
+        List<Student> students = studentService.getAllActiveStudents();
         model.addAttribute("payment", payment);
         model.addAttribute("students", students);
         model.addAttribute("paymentMethods", PaymentMethod.values());

@@ -35,11 +35,10 @@ public class Student {
     @Column(columnDefinition = "TEXT")
     private String globalGoal;
     private Integer age;
-
     private BigDecimal price;
-
     @Enumerated(EnumType.STRING)
     private Currency currency;
+    private boolean active = true;
 
     @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)

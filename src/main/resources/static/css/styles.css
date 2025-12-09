@@ -272,3 +272,24 @@ body.list-payments-page {
     background: rgba(0, 0, 0, 0.5);
     padding: 30px 40px;
 }
+
+/* Student Active/Inactive Status Styles */
+.inactive-student-row {
+    background: rgba(100, 100, 100, 0.3); /* Darker gray background for inactive */
+    color: #ccc; /* Dimmer text */
+    /* text-decoration: line-through; */ /* Strikethrough can be added here if desired */
+}
+
+.inactive-student-row:hover {
+    background: rgba(100, 100, 100, 0.4); /* Slightly darker on hover for inactive */
+}
+
+.status-active {
+    color: #28a745; /* Green */
+    font-weight: bold;
+}
+
+.status-inactive {
+    color: #dc3545; /* Red */
+    font-weight: bold;
+}

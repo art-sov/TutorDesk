@@ -1,6 +1,6 @@
 package com.art.tutordesk.student;
 
-import com.art.tutordesk.payment.Currency; // Import Currency enum
+import com.art.tutordesk.payment.Currency;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class StudentViewController {
     @GetMapping("/new")
     public String showAddStudentForm(Model model) {
         model.addAttribute("student", new Student());
-        model.addAttribute("currencies", Currency.values()); // Add currencies to model
+        model.addAttribute("currencies", Currency.values());
         return "student/add-student";
     }
 
@@ -33,24 +34,34 @@ public class StudentViewController {
     }
 
     @GetMapping("/list")
-    public String showStudentList(Model model) {
-        List<Student> students = studentService.getAllStudents();
+    public String showStudentList(@RequestParam(value = "showInactive", defaultValue = "false") boolean showInactive, Model model) {
+        List<Student> students;
+        if (showInactive) {
+            students = studentService.getAllStudentsIncludingInactive();
+        } else {
+            students = studentService.getAllActiveStudents();
+        }
         model.addAttribute("students", students);
+        model.addAttribute("showInactive", showInactive);
         return "student/list-students";
     }
 
-    /**
-     * Handles the deletion of a student.
-     * Uses POST instead of DELETE due to HTML form limitations, as standard HTML forms
-     * only natively support GET and POST methods for form submissions.
-     *
-     * @param id The ID of the student to delete.
-     * @return A redirect to the student list page.
-     */
-    @PostMapping("/delete/{id}")
-    public String deleteStudent(@PathVariable Long id) {
-        studentService.deleteStudent(id);
+    @PostMapping("/deactivate/{id}")
+    public String deactivateStudent(@PathVariable Long id) {
+        studentService.deactivateStudent(id);
         return "redirect:/students/list";
+    }
+
+    @PostMapping("/hard-delete/{id}")
+    public String hardDeleteStudent(@PathVariable Long id) {
+        studentService.hardDeleteStudent(id);
+        return "redirect:/students/list";
+    }
+
+    @PostMapping("/activate/{id}")
+    public String activateStudent(@PathVariable Long id) {
+        studentService.activateStudent(id);
+        return "redirect:/students/profile/{id}";
     }
 
     @GetMapping("/edit/{id}")
@@ -65,7 +76,7 @@ public class StudentViewController {
     public String updateStudent(@PathVariable Long id, @ModelAttribute("student") Student student) {
         student.setId(id);
         studentService.saveStudent(student);
-        return "redirect:/students/list";
+        return "redirect:/students/profile/{id}"; // Redirect to profile to see updated details
     }
 
     @GetMapping("/profile/{id}")

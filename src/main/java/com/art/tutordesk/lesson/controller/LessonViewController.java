@@ -37,7 +37,7 @@ public class LessonViewController {
     @GetMapping("/new")
     public String newLessonForm(Model model) {
         model.addAttribute("lesson", new Lesson());
-        model.addAttribute("allStudents", studentService.getAllStudents());
+        model.addAttribute("allStudents", studentService.getAllActiveStudents());
         return "lesson/add-lesson";
     }
 
@@ -61,7 +61,7 @@ public class LessonViewController {
     public String editLessonForm(@PathVariable Long id, Model model) {
         Lesson lesson = lessonService.getLessonById(id);
         model.addAttribute("lesson", lesson);
-        model.addAttribute("allStudents", studentService.getAllStudents());
+        model.addAttribute("allStudents", studentService.getAllActiveStudents());
 
         // Get IDs of students already associated with this lesson
         List<Long> selectedStudentIds = lesson.getLessonStudents().stream()
