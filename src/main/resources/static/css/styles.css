@@ -258,3 +258,14 @@ a.btn-profile-action {
     border-radius: 5px;
     display: inline-block;
 }
+
+/* Adjustments for list-payments page */
+body.list-payments-page {
+    padding: 40px 20px;
+}
+.container.list-payments-page {
+    max-width: 1000px; /* Adjust as needed */
+    margin: 0 auto;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 30px 40px;
+}

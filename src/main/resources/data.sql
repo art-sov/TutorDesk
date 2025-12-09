@@ -45,3 +45,11 @@ INSERT INTO lesson_student (lesson_id, student_id, payment_status) VALUES
 (13, 5, 'UNPAID'), (13, 1, 'PAID'),
 (14, 2, 'UNPAID'), (14, 3, 'UNPAID'),
 (15, 4, 'UNPAID'), (15, 5, 'UNPAID');
+
+-- Inserting payments (for 4 out of 5 students)
+INSERT INTO payments (payment_date, student_id, payment_method, amount, currency) VALUES
+(CURRENT_DATE(), 1, 'CARD', 100.00, 'EUR'), -- John Doe
+(CURRENT_DATE(), 2, 'CASH', 150.00, 'EUR'), -- Jane Smith
+(CURRENT_DATE(), 3, 'CARD', 40.00, 'EUR'),  -- Carlos Ruiz
+(CURRENT_DATE(), 4, 'PAYPAL', 30.00, 'EUR');   -- Hanna Petrenko
+
