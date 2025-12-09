@@ -1,9 +1,5 @@
-package com.art.tutordesk.payment.controller;
+package com.art.tutordesk.payment;
 
-import com.art.tutordesk.payment.Currency;
-import com.art.tutordesk.payment.Payment;
-import com.art.tutordesk.payment.PaymentMethod;
-import com.art.tutordesk.payment.service.PaymentService;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import java.time.LocalDate; // Added import
 import java.util.List;
 
 @Controller
@@ -23,7 +20,7 @@ import java.util.List;
 public class PaymentViewController {
 
     private final PaymentService paymentService;
-    private final StudentService studentService; // Inject StudentService
+    private final StudentService studentService;
 
     @GetMapping("/list")
     public String listPayments(Model model) {
@@ -35,6 +32,29 @@ public class PaymentViewController {
     public String viewPaymentProfile(@PathVariable Long id, Model model) {
         model.addAttribute("payment", paymentService.getPaymentById(id));
         return "payment/payment-profile";
+    }
+
+    @GetMapping("/new")
+    public String addPaymentForm(Model model) {
+        Payment payment = new Payment();
+        payment.setPaymentDate(LocalDate.now()); // Set default date
+        List<Student> students = studentService.getAllStudents();
+        model.addAttribute("payment", payment);
+        model.addAttribute("students", students);
+        model.addAttribute("paymentMethods", PaymentMethod.values());
+        model.addAttribute("currencies", Currency.values());
+        return "payment/add-payment";
+    }
+
+    @PostMapping("/create")
+    public String createPayment(@ModelAttribute Payment payment) {
+        // Ensure student object is fully loaded if coming from a form with just student ID
+        if (payment.getStudent() != null && payment.getStudent().getId() != null) {
+            Student student = studentService.getStudentById(payment.getStudent().getId());
+            payment.setStudent(student);
+        }
+        paymentService.savePayment(payment);
+        return "redirect:/payments/list";
     }
 
     @GetMapping("/edit/{id}")
@@ -52,6 +72,11 @@ public class PaymentViewController {
     public String updatePayment(@PathVariable Long id, @ModelAttribute Payment payment) {
         // Ensure the ID from the path is set on the payment object
         payment.setId(id);
+        // Ensure student object is fully loaded if coming from a form with just student ID
+        if (payment.getStudent() != null && payment.getStudent().getId() != null) {
+            Student student = studentService.getStudentById(payment.getStudent().getId());
+            payment.setStudent(student);
+        }
         paymentService.savePayment(payment);
         return "redirect:/payments/profile/{id}";
     }

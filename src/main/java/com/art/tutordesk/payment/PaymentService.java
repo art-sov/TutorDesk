@@ -1,7 +1,5 @@
-package com.art.tutordesk.payment.service;
+package com.art.tutordesk.payment;
 
-import com.art.tutordesk.payment.Payment;
-import com.art.tutordesk.payment.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
