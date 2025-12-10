@@ -54,3 +54,12 @@ INSERT INTO payments (payment_date, student_id, payment_method, amount, currency
 (CURRENT_DATE(), 3, 'CARD', 40.00, 'EUR'),  -- Carlos Ruiz
 (CURRENT_DATE(), 4, 'PAYPAL', 30.00, 'EUR');   -- Hanna Petrenko
 
+-- Inserting initial student_balance records
+INSERT INTO student_balance (student_id, balance_amount, balance_currency, last_updated_at) VALUES
+(1, -25.00, 'USD', CURRENT_TIMESTAMP()), -- John Doe
+(2, -30.00, 'PLN', CURRENT_TIMESTAMP()), -- Jane Smith
+(3, 20.00, 'EUR', CURRENT_TIMESTAMP()),   -- Carlos Ruiz
+(4, -44.00, 'UAH', CURRENT_TIMESTAMP()),  -- Hanna Petrenko
+(5, -44.00, 'UAH', CURRENT_TIMESTAMP()),  -- Ihor Karpenko
+(6, 0.00, 'USD', CURRENT_TIMESTAMP());   -- Mohammed Ali
+
