@@ -19,6 +19,7 @@ import java.util.List;
 public class StudentViewController {
 
     private final StudentService studentService;
+    private final BalanceService balanceService;
 
     @GetMapping("/new")
     public String showAddStudentForm(Model model) {
@@ -68,7 +69,7 @@ public class StudentViewController {
     public String showEditStudentForm(@PathVariable Long id, Model model) {
         Student student = studentService.getStudentById(id);
         model.addAttribute("student", student);
-        model.addAttribute("currencies", Currency.values()); // Add currencies to model
+        model.addAttribute("currencies", Currency.values());
         return "student/edit-student";
     }
 
@@ -76,13 +77,14 @@ public class StudentViewController {
     public String updateStudent(@PathVariable Long id, @ModelAttribute("student") Student student) {
         student.setId(id);
         studentService.saveStudent(student);
-        return "redirect:/students/profile/{id}"; // Redirect to profile to see updated details
+        return "redirect:/students/profile/{id}";
     }
 
     @GetMapping("/profile/{id}")
     public String showStudentProfile(@PathVariable Long id, Model model) {
         Student student = studentService.getStudentById(id);
         model.addAttribute("student", student);
+        model.addAttribute("balances", balanceService.getAllBalancesForStudent(id));
         return "student/student-profile";
     }
 }
