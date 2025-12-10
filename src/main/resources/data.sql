@@ -24,28 +24,28 @@ INSERT INTO lessons (lesson_date, start_time, topic) VALUES
 (DATEADD('DAY', 2, CURRENT_DATE()), '11:30:00', 'TOEFL Preparation'),
 (DATEADD('DAY', 2, CURRENT_DATE()), '14:00:00', 'General English Practice');
 
--- Inserting into lesson_student (lesson_id, student_id, payment_status)
+-- Inserting into lesson_student (lesson_id, student_id, payment_status, price, currency) VALUES
 -- Distribution: ~50% PAID, ~25% PARTIALLY_PAID, ~25% UNPAID
--- All students (IDs 1-5) are used, 2 students per lesson.
-INSERT INTO lesson_student (lesson_id, student_id, payment_status) VALUES
+-- All students (IDs 1-6) are used, 2 students per lesson.
+INSERT INTO lesson_student (lesson_id, student_id, payment_status, price, currency) VALUES
 -- Lessons 1-8: PAID (16 entries)
-(1, 1, 'PAID'), (1, 2, 'PAID'),
-(2, 3, 'PAID'), (2, 4, 'PAID'),
-(3, 5, 'PAID'), (3, 1, 'PAID'),
-(4, 2, 'PAID'), (4, 3, 'PAID'),
-(5, 4, 'PAID'), (5, 5, 'PAID'),
-(6, 1, 'PAID'), (6, 2, 'PAID'),
-(7, 3, 'PAID'), (7, 4, 'PAID'),
-(8, 5, 'PAID'), (8, 1, 'PAID'),
+(1, 1, 'PAID', 25.00, 'USD'), (1, 2, 'PAID', 30.00, 'PLN'),
+(2, 3, 'PAID', 20.00, 'EUR'), (2, 4, 'PAID', 22.00, 'UAH'),
+(3, 5, 'PAID', 22.00, 'UAH'), (3, 6, 'PAID', 28.00, 'USD'),
+(4, 2, 'PAID', 30.00, 'PLN'), (4, 3, 'PAID', 20.00, 'EUR'),
+(5, 4, 'PAID', 22.00, 'UAH'), (5, 5, 'PAID', 22.00, 'UAH'),
+(6, 1, 'PAID', 25.00, 'USD'), (6, 2, 'PAID', 30.00, 'PLN'),
+(7, 3, 'PAID', 20.00, 'EUR'), (7, 4, 'PAID', 22.00, 'UAH'),
+(8, 5, 'PAID', 22.00, 'UAH'), (8, 6, 'PAID', 28.00, 'USD'),
 -- Lessons 9-11: PARTIALLY_PAID (6 entries)
-(9, 2, 'PAID'), (9, 3, 'FREE'),
-(10, 4, 'FREE'), (10, 5, 'FREE'),
-(11, 1, 'UNPAID'), (11, 2, 'FREE'),
+(9, 2, 'PAID', 30.00, 'PLN'), (9, 3, 'FREE', 20.00, 'EUR'),
+(10, 4, 'FREE', 22.00, 'UAH'), (10, 5, 'FREE', 22.00, 'UAH'),
+(11, 1, 'UNPAID', 25.00, 'USD'), (11, 2, 'FREE', 30.00, 'PLN'),
 -- Lessons 12-15: UNPAID (8 entries)
-(12, 3, 'PAID'), (12, 4, 'UNPAID'),
-(13, 5, 'UNPAID'), (13, 1, 'PAID'),
-(14, 2, 'UNPAID'), (14, 3, 'UNPAID'),
-(15, 4, 'UNPAID'), (15, 5, 'UNPAID');
+(12, 3, 'PAID', 20.00, 'EUR'), (12, 4, 'UNPAID', 22.00, 'UAH'),
+(13, 5, 'UNPAID', 22.00, 'UAH'), (13, 6, 'PAID', 28.00, 'USD'),
+(14, 2, 'UNPAID', 30.00, 'PLN'), (14, 3, 'UNPAID', 20.00, 'EUR'),
+(15, 4, 'UNPAID', 22.00, 'UAH'), (15, 5, 'UNPAID', 22.00, 'UAH');
 
 -- Inserting payments (for 4 out of 5 students)
 INSERT INTO payments (payment_date, student_id, payment_method, amount, currency) VALUES

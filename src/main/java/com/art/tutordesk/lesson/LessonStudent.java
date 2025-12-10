@@ -1,5 +1,6 @@
 package com.art.tutordesk.lesson;
 
+import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,9 +17,11 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Data
 @Entity
-@Table(name = "lesson_student") // Renaming the join table to a specific entity table name
+@Table(name = "lesson_student")
 @NoArgsConstructor
 @AllArgsConstructor
 public class LessonStudent {
@@ -39,5 +42,10 @@ public class LessonStudent {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status")
-    private PaymentStatus paymentStatus; // Status of payment for this specific student in this lesson
+    private PaymentStatus paymentStatus;
+
+    private BigDecimal price;
+
+    @Enumerated(EnumType.STRING)
+    private Currency currency;
 }
