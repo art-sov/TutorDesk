@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Reports</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body>
+<div class="container">
+    <h2 class="mt-4">Reports</h2>
+    <hr/>
+
+    <!-- Report Filters -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="text-white">Filters</h5>
+        </div>
+        <div class="card-body">
+            <form>
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="startDate" class="form-label text-white">From:</label>
+                        <input type="date" id="startDate" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="endDate" class="form-label text-white">To:</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="students" class="form-label text-white">Students:</label>
+                        <select id="students" class="form-select" multiple>
+                            <option th:each="student : ${students}"
+                                    th:value="${student.id}"
+                                    th:text="${student.firstName + ' ' + student.lastName}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3">Generate Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="text-white">Metrics</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="metric-box">
+                        <h6 class="text-white">Lessons This Month</h6>
+                        <p class="h3 text-white" th:text="${lessonsThisMonth}">25</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-box">
+                        <h6 class="text-white">Active Students</h6>
+                        <p class="h3 text-white" th:text="${activeStudentsCount}">0</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-box">
+                        <h6 class="text-white">Total Payments</h6>
+                        <div th:each="entry : ${totalPayments}">
+                            <p class="h5 text-white"
+                               th:text="${entry.key.symbol + ' ' + #numbers.formatDecimal(entry.value, 1, 2)}"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="/" class="btn btn-secondary mt-4">Back to Home</a>
+
+</div>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"-->
+<!--        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4mnQ7wO3O15xX5w5nF22r3n1Q1Yq/J63o/y+v/g4A=="-->
+<!--        crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
+
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"-->
+<!--        integrity="sha512-IHH9c/oJ/I4xT8d9Hn9L1f5z1B3g6yW5sY4uY3Y2yN2Q/3r41Y6p1+oR9/uU5f1Q3eG5G4Zt7w=="-->
+<!--        crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
+
+<!--<script>-->
+<!--    $(document).ready(function() {-->
+<!--          $("#students").select2({-->
+<!--              placeholder: "Выберите студентов...",-->
+<!--              width: "100%",-->
+<!--              allowClear: true-->
+<!--          });-->
+<!--      });-->
+<!--</script>-->
+</body>
+</html>
