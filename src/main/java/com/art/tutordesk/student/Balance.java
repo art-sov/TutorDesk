@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class StudentBalance {
+public class Balance {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,10 +33,10 @@ public class StudentBalance {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    private BigDecimal balanceAmount;
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    private Currency balanceCurrency;
+    private Currency currency;
 
     private LocalDateTime lastUpdatedAt;
 }

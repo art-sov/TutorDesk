@@ -12,6 +12,7 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
+    private final BalanceService balanceService;
 
     @Transactional
     public Student saveStudent(Student student) {
@@ -35,6 +36,7 @@ public class StudentService {
 
     @Transactional
     public void hardDeleteStudent(Long studentId) {
+        balanceService.resetBalancesForStudent(studentId);
         studentRepository.deleteById(studentId);
     }
 

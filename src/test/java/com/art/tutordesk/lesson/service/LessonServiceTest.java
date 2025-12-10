@@ -108,19 +108,19 @@ class LessonServiceTest {
 
         List<Lesson> lessons = Arrays.asList(lesson1, lesson2);
         when(lessonRepository.findAllWithStudentsSorted()).thenReturn(lessons);
-        
+
         // Mocking paymentStatusUtil behavior
         when(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson1.getLessonStudents()))
-            .thenReturn(PaymentStatus.PAID);
+                .thenReturn(PaymentStatus.PAID);
         when(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson2.getLessonStudents()))
-            .thenReturn(PaymentStatus.UNPAID);
+                .thenReturn(PaymentStatus.UNPAID);
 
         List<Lesson> result = lessonService.getAllLessonsSorted();
 
         assertEquals(2, result.size());
         assertEquals(PaymentStatus.PAID, result.get(0).getPaymentStatus()); // Corrected getter
         assertEquals(PaymentStatus.UNPAID, result.get(1).getPaymentStatus()); // Corrected getter
-        
+
         verify(lessonRepository, times(1)).findAllWithStudentsSorted();
         verify(paymentStatusUtil, times(1)).calculateAndSetLessonPaymentStatus(lesson1.getLessonStudents());
         verify(paymentStatusUtil, times(1)).calculateAndSetLessonPaymentStatus(lesson2.getLessonStudents());
@@ -147,7 +147,7 @@ class LessonServiceTest {
 
         when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1));
         when(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson1.getLessonStudents()))
-            .thenReturn(PaymentStatus.PAID);
+                .thenReturn(PaymentStatus.PAID);
 
         Lesson result = lessonService.getLessonById(1L);
 
@@ -184,7 +184,7 @@ class LessonServiceTest {
         when(studentService.getStudentById(student2.getId())).thenReturn(student2);
         // Mocking createLessonStudent and returning some LessonStudent
         when(lessonStudentService.createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class)))
-            .thenReturn(new LessonStudent());
+                .thenReturn(new LessonStudent());
         when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1)); // For refresh
 
         Lesson result = lessonService.saveLesson(new Lesson(), selectedStudentIds);
@@ -234,17 +234,17 @@ class LessonServiceTest {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
         lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
-        lessonToUpdate.setStartTime(LocalTime.now()); 
+        lessonToUpdate.setStartTime(LocalTime.now());
         lessonToUpdate.setTopic("Updated Topic");
 
         Student student2 = new Student(); // This student will have an existing PAID status
         student2.setId(2L);
-        
+
         // Create an existing LessonStudent for student2 within initialLesson1
         LessonStudent existingLessonStudentForStudent2 = new LessonStudent();
         existingLessonStudentForStudent2.setStudent(student2);
         existingLessonStudentForStudent2.setPaymentStatus(PaymentStatus.PAID);
-        
+
         // Ensure initialLesson1 contains only existingLessonStudentForStudent2
         Lesson initialLesson1 = new Lesson();
         initialLesson1.setId(1L);
@@ -259,22 +259,22 @@ class LessonServiceTest {
         when(lessonRepository.save(any(Lesson.class))).thenReturn(initialLesson1); // Save returns the same lesson
         when(studentService.getStudentById(eq(student1.getId()))).thenReturn(student1);
         when(studentService.getStudentById(eq(student2.getId()))).thenReturn(student2);
-        
+
         // Mock the createLessonStudent service call
         when(lessonStudentService.createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class)))
-            .thenReturn(new LessonStudent());
+                .thenReturn(new LessonStudent());
 
         lessonService.updateLesson(lessonToUpdate, selectedStudentIds);
 
         assertNotNull(initialLesson1); // Check initialLesson1, as updatedLesson is the same object
         assertEquals(lessonToUpdate.getId(), initialLesson1.getId());
         assertEquals(lessonToUpdate.getTopic(), initialLesson1.getTopic()); // Verify update
-        
+
         verify(lessonRepository, times(1)).findById(eq(1L)); // Verify findById with specific ID
         verify(lessonRepository, times(1)).save(eq(initialLesson1)); // Verify save with the initialLesson1 object
         verify(studentService, times(1)).getStudentById(eq(student1.getId()));
         verify(studentService, times(1)).getStudentById(eq(student2.getId()));
-        
+
         // Verify createLessonStudent is called for student1 with UNPAID (new association)
         verify(lessonStudentService, times(1)).createLessonStudent(eq(student1), eq(initialLesson1), eq(PaymentStatus.UNPAID));
         // Verify createLessonStudent is called for student2 with PAID (existing association, status preserved)

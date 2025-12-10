@@ -27,6 +27,8 @@ public class LessonStudentService {
         lessonStudent.setLesson(lesson);
         lessonStudent.setStudent(student);
         lessonStudent.setPaymentStatus(paymentStatus);
+        lessonStudent.setPrice(student.getPrice());
+        lessonStudent.setCurrency(student.getCurrency());
         return lessonStudentRepository.save(lessonStudent);
     }
 }
