@@ -1,5 +1,7 @@
 package com.art.tutordesk.lesson.service;
 
+import com.art.tutordesk.events.LessonStudentCreatedEvent;
+import com.art.tutordesk.events.LessonStudentDeletedEvent;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
@@ -8,6 +10,7 @@ import com.art.tutordesk.lesson.PaymentStatusUtil;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +27,7 @@ public class LessonService {
     private final StudentService studentService;
     private final LessonStudentService lessonStudentService;
     private final PaymentStatusUtil paymentStatusUtil;
+    private final ApplicationEventPublisher eventPublisher;
 
     public List<Lesson> getAllLessonsSorted() {
         List<Lesson> lessons = lessonRepository.findAllWithStudentsSorted();
@@ -54,7 +58,8 @@ public class LessonService {
                 Student student = studentService.getStudentById(studentId);
 
                 // Create and save LessonStudent association
-                lessonStudentService.createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
+                LessonStudent lessonStudent = lessonStudentService.createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
+                eventPublisher.publishEvent(new LessonStudentCreatedEvent(lessonStudent));
             }
         }
 
@@ -82,21 +87,26 @@ public class LessonService {
         existingLesson.setStartTime(lesson.getStartTime());
         existingLesson.setTopic(lesson.getTopic());
 
-        // 3. Clear existing lessonStudents associations.
+        // 3. Publish deletion events before clearing the associations
+        existingLesson.getLessonStudents().forEach(lessonStudent ->
+                eventPublisher.publishEvent(new LessonStudentDeletedEvent(lessonStudent)));
+
+        // Clear existing lessonStudents associations.
         // Due to orphanRemoval=true, these will be deleted from the database.
-        existingLesson.getLessonStudents().clear(); // This will trigger deletion
+        existingLesson.getLessonStudents().clear();
         Lesson updatedLesson = lessonRepository.save(existingLesson); // Save the updated lesson and trigger deletion of old associations
 
         // 4. Associate new/re-associated students
         if (!CollectionUtils.isEmpty(selectedStudentIds)) {
             for (Long studentId : selectedStudentIds) {
                 Student student = studentService.getStudentById(studentId);
-                
+
                 // Determine payment status: use existing if student was already associated, otherwise UNPAID
                 PaymentStatus paymentStatus = existingStudentPaymentStatuses.getOrDefault(studentId, PaymentStatus.UNPAID);
 
                 // Create and save LessonStudent association
-                lessonStudentService.createLessonStudent(student, updatedLesson, paymentStatus);
+                LessonStudent newLessonStudent = lessonStudentService.createLessonStudent(student, updatedLesson, paymentStatus);
+                eventPublisher.publishEvent(new LessonStudentCreatedEvent(newLessonStudent));
             }
         }
 
@@ -105,6 +115,16 @@ public class LessonService {
 
     @Transactional
     public void deleteLesson(Long id) {
+        // First, fetch the lesson to get its students for event publishing
+        Lesson lesson = lessonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found for deletion with id: " + id));
+
+        // Publish deletion events for each student in the lesson
+        lesson.getLessonStudents().forEach(lessonStudent ->
+                eventPublisher.publishEvent(new LessonStudentDeletedEvent(lessonStudent)));
+
         lessonRepository.deleteById(id);
     }
+
+    //todo refactoring this service
 }

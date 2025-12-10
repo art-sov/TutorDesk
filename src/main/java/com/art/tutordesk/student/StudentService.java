@@ -1,6 +1,8 @@
 package com.art.tutordesk.student;
 
+import com.art.tutordesk.events.StudentHardDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +14,7 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final BalanceService balanceService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Student saveStudent(Student student) {
@@ -36,7 +38,7 @@ public class StudentService {
 
     @Transactional
     public void hardDeleteStudent(Long studentId) {
-        balanceService.resetBalancesForStudent(studentId);
+        eventPublisher.publishEvent(new StudentHardDeletedEvent(studentId));
         studentRepository.deleteById(studentId);
     }
 

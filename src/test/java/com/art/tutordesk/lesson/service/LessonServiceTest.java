@@ -1,5 +1,7 @@
 package com.art.tutordesk.lesson.service;
 
+import com.art.tutordesk.events.LessonStudentCreatedEvent;
+import com.art.tutordesk.events.LessonStudentDeletedEvent;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
@@ -10,9 +12,11 @@ import com.art.tutordesk.student.StudentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -46,6 +50,8 @@ class LessonServiceTest {
     private LessonStudentService lessonStudentService;
     @Mock
     private PaymentStatusUtil paymentStatusUtil;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private LessonService lessonService;
@@ -171,30 +177,36 @@ class LessonServiceTest {
         verify(lessonRepository, times(1)).save(any(Lesson.class));
         verify(studentService, never()).getStudentById(anyLong());
         verify(lessonStudentService, never()).createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class));
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
-    void saveLesson_shouldSaveLessonWithStudents_whenStudentsSelected() {
+    void saveLesson_shouldSaveLessonWithStudents_andPublishEvents() {
         Student student2 = new Student();
         student2.setId(2L);
         List<Long> selectedStudentIds = Arrays.asList(student1.getId(), student2.getId());
 
+        // Mock the returned LessonStudent objects
+        LessonStudent ls1 = new LessonStudent(null, lesson1, student1, PaymentStatus.UNPAID, null, null);
+        LessonStudent ls2 = new LessonStudent(null, lesson1, student2, PaymentStatus.UNPAID, null, null);
+
         when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
         when(studentService.getStudentById(student1.getId())).thenReturn(student1);
         when(studentService.getStudentById(student2.getId())).thenReturn(student2);
-        // Mocking createLessonStudent and returning some LessonStudent
-        when(lessonStudentService.createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class)))
-                .thenReturn(new LessonStudent());
+        when(lessonStudentService.createLessonStudent(eq(student1), any(Lesson.class), any(PaymentStatus.class))).thenReturn(ls1);
+        when(lessonStudentService.createLessonStudent(eq(student2), any(Lesson.class), any(PaymentStatus.class))).thenReturn(ls2);
         when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1)); // For refresh
 
-        Lesson result = lessonService.saveLesson(new Lesson(), selectedStudentIds);
+        lessonService.saveLesson(new Lesson(), selectedStudentIds);
 
-        assertNotNull(result);
-        assertEquals(lesson1.getId(), result.getId());
-        verify(lessonRepository, times(1)).save(any(Lesson.class));
-        verify(studentService, times(1)).getStudentById(student1.getId());
-        verify(studentService, times(1)).getStudentById(student2.getId());
-        verify(lessonStudentService, times(2)).createLessonStudent(any(Student.class), any(Lesson.class), eq(PaymentStatus.UNPAID));
+        // Verify that events were published for each created LessonStudent
+        ArgumentCaptor<LessonStudentCreatedEvent> eventCaptor = ArgumentCaptor.forClass(LessonStudentCreatedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+
+        List<LessonStudentCreatedEvent> capturedEvents = eventCaptor.getAllValues();
+        assertEquals(2, capturedEvents.size());
+        assertTrue(capturedEvents.stream().anyMatch(event -> event.getLessonStudent().getStudent().equals(student1)));
+        assertTrue(capturedEvents.stream().anyMatch(event -> event.getLessonStudent().getStudent().equals(student2)));
     }
 
     // Test cases for updateLesson
@@ -209,82 +221,95 @@ class LessonServiceTest {
     }
 
     @Test
-    void updateLesson_shouldUpdateLessonWithoutStudents_whenNoStudentsSelected() {
+    void updateLesson_shouldPublishDeleteEvent_whenStudentsAreRemoved() {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
         lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
         lessonToUpdate.setTopic("Updated Topic");
+
+        // Setup: existing lesson has one student
+        LessonStudent existingLs = new LessonStudent(1L, lesson1, student1, PaymentStatus.PAID, null, null);
+        lesson1.getLessonStudents().add(existingLs);
 
         when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1));
         when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
 
-        Lesson result = lessonService.updateLesson(lessonToUpdate, Collections.emptyList());
+        // Action: update with no students
+        lessonService.updateLesson(lessonToUpdate, Collections.emptyList());
 
-        assertNotNull(result);
-        assertEquals(lesson1.getId(), result.getId());
-        assertEquals(lessonToUpdate.getTopic(), lesson1.getTopic()); // Verify update
-        assertTrue(lesson1.getLessonStudents().isEmpty()); // Verify clear
-        verify(lessonRepository, times(1)).findById(anyLong());
-        verify(lessonRepository, times(1)).save(any(Lesson.class));
-        verify(lessonStudentService, never()).createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class));
+        // Verify a delete event was published
+        ArgumentCaptor<LessonStudentDeletedEvent> eventCaptor = ArgumentCaptor.forClass(LessonStudentDeletedEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
+        assertEquals(student1, eventCaptor.getValue().getLessonStudent().getStudent());
+
+        // Verify no create events were published
+        verify(eventPublisher, never()).publishEvent(any(LessonStudentCreatedEvent.class));
+        assertTrue(lesson1.getLessonStudents().isEmpty());
     }
 
     @Test
-    void updateLesson_shouldUpdateLessonWithStudents_whenStudentsSelectedAndExistingPaymentsPreserved() {
+    void updateLesson_shouldPublishCreateAndDeleteEvents() {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
-        lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
-        lessonToUpdate.setStartTime(LocalTime.now());
         lessonToUpdate.setTopic("Updated Topic");
 
-        Student student2 = new Student(); // This student will have an existing PAID status
-        student2.setId(2L);
+        // Existing students in the lesson
+        Student studentToRemove = new Student();
+        studentToRemove.setId(2L);
+        Student studentToKeep = new Student();
+        studentToKeep.setId(3L);
 
-        // Create an existing LessonStudent for student2 within initialLesson1
-        LessonStudent existingLessonStudentForStudent2 = new LessonStudent();
-        existingLessonStudentForStudent2.setStudent(student2);
-        existingLessonStudentForStudent2.setPaymentStatus(PaymentStatus.PAID);
+        LessonStudent lsToRemove = new LessonStudent(2L, lesson1, studentToRemove, PaymentStatus.UNPAID, null, null);
+        LessonStudent lsToKeep = new LessonStudent(3L, lesson1, studentToKeep, PaymentStatus.PAID, null, null);
+        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(lsToRemove, lsToKeep)));
 
-        // Ensure initialLesson1 contains only existingLessonStudentForStudent2
-        Lesson initialLesson1 = new Lesson();
-        initialLesson1.setId(1L);
-        initialLesson1.setLessonDate(LocalDate.now());
-        initialLesson1.setStartTime(LocalTime.now());
-        initialLesson1.setTopic("Initial Topic");
-        initialLesson1.setLessonStudents(new HashSet<>(Collections.singletonList(existingLessonStudentForStudent2)));
+        // New student to add
+        Student studentToAdd = student1; // student1 from setUp
+        List<Long> updatedStudentIds = Arrays.asList(studentToKeep.getId(), studentToAdd.getId()); // Keep one, add one
 
-        List<Long> selectedStudentIds = Arrays.asList(student1.getId(), student2.getId()); // student1 is new, student2 is existing
+        LessonStudent createdLs = new LessonStudent(4L, lesson1, studentToAdd, PaymentStatus.UNPAID, null, null);
 
-        when(lessonRepository.findById(eq(1L))).thenReturn(Optional.of(initialLesson1)); // Return the lesson with existing students
-        when(lessonRepository.save(any(Lesson.class))).thenReturn(initialLesson1); // Save returns the same lesson
-        when(studentService.getStudentById(eq(student1.getId()))).thenReturn(student1);
-        when(studentService.getStudentById(eq(student2.getId()))).thenReturn(student2);
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson1));
+        when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
+        when(studentService.getStudentById(studentToAdd.getId())).thenReturn(studentToAdd);
+        when(studentService.getStudentById(studentToKeep.getId())).thenReturn(studentToKeep);
+        when(lessonStudentService.createLessonStudent(eq(studentToAdd), any(Lesson.class), any(PaymentStatus.class))).thenReturn(createdLs);
+        when(lessonStudentService.createLessonStudent(eq(studentToKeep), any(Lesson.class), any(PaymentStatus.class))).thenReturn(lsToKeep);
 
-        // Mock the createLessonStudent service call
-        when(lessonStudentService.createLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class)))
-                .thenReturn(new LessonStudent());
 
-        lessonService.updateLesson(lessonToUpdate, selectedStudentIds);
+        lessonService.updateLesson(lessonToUpdate, updatedStudentIds);
 
-        assertNotNull(initialLesson1); // Check initialLesson1, as updatedLesson is the same object
-        assertEquals(lessonToUpdate.getId(), initialLesson1.getId());
-        assertEquals(lessonToUpdate.getTopic(), initialLesson1.getTopic()); // Verify update
+        // Verify delete event for the removed student
+        ArgumentCaptor<LessonStudentDeletedEvent> deleteCaptor = ArgumentCaptor.forClass(LessonStudentDeletedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(deleteCaptor.capture()); // Captures all delete events
+        assertTrue(deleteCaptor.getAllValues().stream().anyMatch(e -> e.getLessonStudent().getStudent().equals(studentToRemove)));
+        assertTrue(deleteCaptor.getAllValues().stream().anyMatch(e -> e.getLessonStudent().getStudent().equals(studentToKeep)));
 
-        verify(lessonRepository, times(1)).findById(eq(1L)); // Verify findById with specific ID
-        verify(lessonRepository, times(1)).save(eq(initialLesson1)); // Verify save with the initialLesson1 object
-        verify(studentService, times(1)).getStudentById(eq(student1.getId()));
-        verify(studentService, times(1)).getStudentById(eq(student2.getId()));
 
-        // Verify createLessonStudent is called for student1 with UNPAID (new association)
-        verify(lessonStudentService, times(1)).createLessonStudent(eq(student1), eq(initialLesson1), eq(PaymentStatus.UNPAID));
-        // Verify createLessonStudent is called for student2 with PAID (existing association, status preserved)
-        verify(lessonStudentService, times(1)).createLessonStudent(eq(student2), eq(initialLesson1), eq(PaymentStatus.PAID));
+        // Verify create event for the added student
+        ArgumentCaptor<LessonStudentCreatedEvent> createCaptor = ArgumentCaptor.forClass(LessonStudentCreatedEvent.class);
+        verify(eventPublisher, times(2)).publishEvent(createCaptor.capture()); // Captures all create events
+        assertTrue(createCaptor.getAllValues().stream().anyMatch(e -> e.getLessonStudent().getStudent().equals(studentToAdd)));
+        assertTrue(createCaptor.getAllValues().stream().anyMatch(e -> e.getLessonStudent().getStudent().equals(studentToKeep)));
     }
 
     // Test cases for deleteLesson
     @Test
-    void deleteLesson_shouldCallRepositoryDeleteById() {
+    void deleteLesson_shouldPublishDeleteEventsAndCallRepository() {
+        // Setup: Lesson has two students
+        Student student2 = new Student();
+        student2.setId(2L);
+        LessonStudent ls1 = new LessonStudent(1L, lesson1, student1, PaymentStatus.PAID, null, null);
+        LessonStudent ls2 = new LessonStudent(2L, lesson1, student2, PaymentStatus.UNPAID, null, null);
+        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(ls1, ls2)));
+
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson1));
+
         lessonService.deleteLesson(1L);
+
+        // Verify that delete events were published for both students
+        verify(eventPublisher, times(2)).publishEvent(any(LessonStudentDeletedEvent.class));
+        // Verify the repository delete method was called
         verify(lessonRepository, times(1)).deleteById(1L);
     }
 }

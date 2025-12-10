@@ -53,7 +53,7 @@ public class PaymentViewController {
             Student student = studentService.getStudentById(payment.getStudent().getId());
             payment.setStudent(student);
         }
-        paymentService.savePayment(payment);
+        paymentService.createPayment(payment);
         return "redirect:/payments/list";
     }
 
@@ -77,7 +77,7 @@ public class PaymentViewController {
             Student student = studentService.getStudentById(payment.getStudent().getId());
             payment.setStudent(student);
         }
-        paymentService.savePayment(payment);
+        paymentService.updatePayment(payment);
         return "redirect:/payments/profile/{id}";
     }
 
