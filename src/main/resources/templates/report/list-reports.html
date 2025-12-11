@@ -57,25 +57,25 @@
     <!-- Key Metrics -->
     <div class="card mt-4">
         <div class="card-header">
-            <h5 class="text-white">Metrics</h5>
+            <h5 class="text-white">Metrics This Month</h5>
         </div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-4">
                     <div class="metric-box">
-                        <h6 class="text-white">Lessons This Month</h6>
+                        <h6 class="text-white">Lessons</h6>
                         <p class="h3 text-white" th:text="${lessonsThisMonth}">25</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="metric-box">
-                        <h6 class="text-white">Active Students</h6>
+                        <h6 class="text-white">Students</h6>
                         <p class="h3 text-white" th:text="${activeStudentsCount}">0</p>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="metric-box">
-                        <h6 class="text-white">Total Payments</h6>
+                        <h6 class="text-white">Payments</h6>
                         <div th:each="entry : ${totalPayments}">
                             <p class="h5 text-white"
                                th:text="${entry.key.symbol + ' ' + #numbers.formatDecimal(entry.value, 1, 2)}"></p>
