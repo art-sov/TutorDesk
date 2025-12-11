@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Reports</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
@@ -29,7 +30,8 @@
                     </div>
                     <div class="col-md-6">
                         <label for="students" class="form-label text-white">Students:</label>
-                        <select id="students" class="form-select" multiple>
+                        <select id="students" multiple class="form-control" name="selectedStudentIds"
+                                style="width: 100%;">
                             <option th:each="student : ${students}"
                                     th:value="${student.id}"
                                     th:text="${student.firstName + ' ' + student.lastName}">
@@ -77,22 +79,16 @@
     <a href="/" class="btn btn-secondary mt-4">Back to Home</a>
 
 </div>
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"-->
-<!--        integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4mnQ7wO3O15xX5w5nF22r3n1Q1Yq/J63o/y+v/g4A=="-->
-<!--        crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
-
-<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/chosen/1.8.7/chosen.jquery.min.js"-->
-<!--        integrity="sha512-IHH9c/oJ/I4xT8d9Hn9L1f5z1B3g6yW5sY4uY3Y2yN2Q/3r41Y6p1+oR9/uU5f1Q3eG5G4Zt7w=="-->
-<!--        crossorigin="anonymous" referrerpolicy="no-referrer"></script>-->
-
-<!--<script>-->
-<!--    $(document).ready(function() {-->
-<!--          $("#students").select2({-->
-<!--              placeholder: "Выберите студентов...",-->
-<!--              width: "100%",-->
-<!--              allowClear: true-->
-<!--          });-->
-<!--      });-->
-<!--</script>-->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    $(document).ready(function() {
+         $('#students').select2({
+             placeholder: "Select students...",
+             width: 'resolve',
+             dropdownParent: $('#students').parent()
+         });
+     });
+</script>
 </body>
 </html>
