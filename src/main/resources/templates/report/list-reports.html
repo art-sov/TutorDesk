@@ -18,15 +18,15 @@
             <h5 class="text-white">Filters</h5>
         </div>
         <div class="card-body">
-            <form>
+            <form action="/reports/generate" method="post">
                 <div class="row">
                     <div class="col-md-3">
                         <label for="startDate" class="form-label text-white">From:</label>
-                        <input type="date" id="startDate" class="form-control">
+                        <input type="date" id="startDate" name="startDate" class="form-control">
                     </div>
                     <div class="col-md-3">
                         <label for="endDate" class="form-label text-white">To:</label>
-                        <input type="date" id="endDate" class="form-control">
+                        <input type="date" id="endDate" name="endDate" class="form-control">
                     </div>
                     <div class="col-md-6">
                         <label for="students" class="form-label text-white">Students:</label>
