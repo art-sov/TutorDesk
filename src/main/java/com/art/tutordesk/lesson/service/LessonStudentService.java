@@ -22,13 +22,13 @@ public class LessonStudentService {
         return lessonStudentRepository.save(lessonStudent);
     }
 
-    public LessonStudent createLessonStudent(Student student, Lesson lesson, PaymentStatus paymentStatus) {
+    public LessonStudent buildLessonStudent(Student student, Lesson lesson, PaymentStatus paymentStatus) {
         LessonStudent lessonStudent = new LessonStudent();
         lessonStudent.setLesson(lesson);
         lessonStudent.setStudent(student);
         lessonStudent.setPaymentStatus(paymentStatus);
-        lessonStudent.setPrice(student.getPrice());
+        // Price and currency will be set in the calling service, which has more context.
         lessonStudent.setCurrency(student.getCurrency());
-        return lessonStudentRepository.save(lessonStudent);
+        return lessonStudent;
     }
 }

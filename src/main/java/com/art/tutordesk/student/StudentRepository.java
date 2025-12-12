@@ -10,4 +10,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     List<Student> findAllByActiveTrueOrderByIdAsc();
 
     long countByActiveTrue();
+
+    List<Student> findAllByIdIn(List<Long> ids);
 }

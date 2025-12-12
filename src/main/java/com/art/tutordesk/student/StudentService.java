@@ -53,4 +53,8 @@ public class StudentService {
         return studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
     }
+
+    public List<Student> getStudentsByIds(List<Long> studentIds) {
+        return studentRepository.findAllByIdIn(studentIds);
+    }
 }

@@ -1,6 +1,8 @@
 package com.art.tutordesk.lesson.controller;
 
 import com.art.tutordesk.lesson.Lesson;
+import com.art.tutordesk.lesson.LessonListDTO;
+import com.art.tutordesk.lesson.LessonProfileDTO;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.Student;
@@ -29,7 +31,7 @@ public class LessonViewController {
 
     @GetMapping("/list")
     public String listLessons(Model model) {
-        List<Lesson> lessons = lessonService.getAllLessonsSorted();
+        List<LessonListDTO> lessons = lessonService.getAllLessonsSorted();
         model.addAttribute("lessons", lessons);
         return "lesson/list-lessons";
     }
@@ -52,14 +54,14 @@ public class LessonViewController {
 
     @GetMapping("/profile/{id}")
     public String showLessonProfile(@PathVariable Long id, Model model) {
-        Lesson lesson = lessonService.getLessonById(id);
+        LessonProfileDTO lesson = lessonService.getLessonById(id);
         model.addAttribute("lesson", lesson);
         return "lesson/lesson-profile";
     }
 
     @GetMapping("/edit/{id}")
     public String editLessonForm(@PathVariable Long id, Model model) {
-        Lesson lesson = lessonService.getLessonById(id);
+        LessonProfileDTO lesson = lessonService.getLessonById(id);
         model.addAttribute("lesson", lesson);
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
 
@@ -91,3 +93,4 @@ public class LessonViewController {
         return "redirect:/lessons/list";
     }
 }
+

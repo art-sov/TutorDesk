@@ -6,9 +6,11 @@ import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
-import com.art.tutordesk.lesson.PaymentStatusUtil;
-import com.art.tutordesk.student.Student;
+import com.art.tutordesk.lesson.LessonListDTO;
+import com.art.tutordesk.lesson.LessonProfileDTO;
+import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.student.StudentService;
+import com.art.tutordesk.student.Student;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -26,91 +28,79 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final StudentService studentService;
     private final LessonStudentService lessonStudentService;
-    private final PaymentStatusUtil paymentStatusUtil;
     private final ApplicationEventPublisher eventPublisher;
+    private final LessonMapper lessonMapper;
 
-    public List<Lesson> getAllLessonsSorted() {
+    public List<LessonListDTO> getAllLessonsSorted() {
         List<Lesson> lessons = lessonRepository.findAllWithStudentsSorted();
-        lessons.forEach(lesson -> {
-            PaymentStatus paymentStatus = paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents());
-            lesson.setPaymentStatus(paymentStatus);
-        });
-        return lessons;
+        return lessons.stream()
+                .map(lessonMapper::toLessonListDTO)
+                .collect(Collectors.toList());
     }
 
-    public Lesson getLessonById(Long id) {
+    public LessonProfileDTO getLessonById(Long id) {
         Lesson lesson = lessonRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
-        PaymentStatus paymentStatus = paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents());
-        lesson.setPaymentStatus(paymentStatus);
-        return lesson;
+        return lessonMapper.toLessonProfileDTO(lesson);
     }
 
     @Transactional
     public Lesson saveLesson(Lesson lesson, List<Long> selectedStudentIds) {
-        // 1. Save the Lesson first to get its ID
         Lesson savedLesson = lessonRepository.save(lesson);
-
-        // 2. Associate students if IDs are provided
-        if (!CollectionUtils.isEmpty(selectedStudentIds)) {
-            for (Long studentId : selectedStudentIds) {
-                // todo Fetch each student. In a real app, optimize with a single query to fetch all students by IDs.
-                Student student = studentService.getStudentById(studentId);
-
-                // Create and save LessonStudent association
-                LessonStudent lessonStudent = lessonStudentService.createLessonStudent(student, savedLesson, PaymentStatus.UNPAID);
-                eventPublisher.publishEvent(new LessonStudentCreatedEvent(lessonStudent));
-            }
-        }
-
-        // Refresh the saved lesson to ensure its lessonStudents collection is up-to-date in the current session
-        // This might be necessary if the save logic within lessonStudentService doesn't automatically update the lesson's collection
-        return lessonRepository.findById(savedLesson.getId()).orElse(savedLesson);
+        associateStudentsWithLesson(savedLesson, selectedStudentIds, Map.of());
+        return savedLesson;
     }
 
     @Transactional
     public Lesson updateLesson(Lesson lesson, List<Long> selectedStudentIds) {
-        // 1. Retrieve the existing lesson
         Lesson existingLesson = lessonRepository.findById(lesson.getId())
                 .orElseThrow(() -> new RuntimeException("Lesson not found for update with id: " + lesson.getId()));
 
-        // Store current payment statuses for existing lessonStudents before clearing
         Map<Long, PaymentStatus> existingStudentPaymentStatuses = existingLesson.getLessonStudents().stream()
                 .collect(Collectors.toMap(
                         lessonStudent -> lessonStudent.getStudent().getId(),
                         LessonStudent::getPaymentStatus,
-                        (oldValue, newValue) -> oldValue // Handle duplicate student IDs if somehow present, keep old status
+                        (oldValue, newValue) -> oldValue
                 ));
 
-        // 2. Update fields from the provided lesson object
         existingLesson.setLessonDate(lesson.getLessonDate());
         existingLesson.setStartTime(lesson.getStartTime());
         existingLesson.setTopic(lesson.getTopic());
 
-        // 3. Publish deletion events before clearing the associations
         existingLesson.getLessonStudents().forEach(lessonStudent ->
                 eventPublisher.publishEvent(new LessonStudentDeletedEvent(lessonStudent)));
 
-        // Clear existing lessonStudents associations.
-        // Due to orphanRemoval=true, these will be deleted from the database.
         existingLesson.getLessonStudents().clear();
-        Lesson updatedLesson = lessonRepository.save(existingLesson); // Save the updated lesson and trigger deletion of old associations
+        lessonRepository.flush();
 
-        // 4. Associate new/re-associated students
-        if (!CollectionUtils.isEmpty(selectedStudentIds)) {
-            for (Long studentId : selectedStudentIds) {
-                Student student = studentService.getStudentById(studentId);
+        associateStudentsWithLesson(existingLesson, selectedStudentIds, existingStudentPaymentStatuses);
 
-                // Determine payment status: use existing if student was already associated, otherwise UNPAID
-                PaymentStatus paymentStatus = existingStudentPaymentStatuses.getOrDefault(studentId, PaymentStatus.UNPAID);
+        return existingLesson;
+    }
 
-                // Create and save LessonStudent association
-                LessonStudent newLessonStudent = lessonStudentService.createLessonStudent(student, updatedLesson, paymentStatus);
-                eventPublisher.publishEvent(new LessonStudentCreatedEvent(newLessonStudent));
-            }
+    private void associateStudentsWithLesson(Lesson lesson, List<Long> studentIds, Map<Long, PaymentStatus> existingStatuses) {
+        if (CollectionUtils.isEmpty(studentIds)) {
+            return;
         }
 
-        return updatedLesson;
+        List<Student> selectedStudents = studentService.getStudentsByIds(studentIds);
+        boolean isGroupLesson = selectedStudents.size() > 1;
+
+        for (Student student : selectedStudents) {
+            PaymentStatus paymentStatus = existingStatuses.getOrDefault(student.getId(), PaymentStatus.UNPAID);
+            LessonStudent lessonStudent = lessonStudentService.buildLessonStudent(student, lesson, paymentStatus);
+
+            java.math.BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
+            lessonStudent.setPrice(price);
+
+            if (price.compareTo(java.math.BigDecimal.ZERO) == 0) {
+                lessonStudent.setPaymentStatus(PaymentStatus.FREE);
+            }
+
+            LessonStudent savedLessonStudent = lessonStudentService.save(lessonStudent);
+            lesson.getLessonStudents().add(savedLessonStudent);
+            eventPublisher.publishEvent(new LessonStudentCreatedEvent(savedLessonStudent));
+        }
     }
 
     @Transactional

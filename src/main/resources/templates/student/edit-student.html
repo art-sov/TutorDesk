@@ -40,8 +40,12 @@
             <textarea class="form-control" id="globalGoal" th:field="*{globalGoal}" rows="3" placeholder="Describe the student's goal"></textarea>
         </div>
         <div class="mb-3">
-            <label for="price" class="form-label">Price per Lesson</label>
-            <input type="number" class="form-control" id="price" th:field="*{price}" placeholder="Enter price per lesson" step="0.01">
+            <label for="priceIndividual" class="form-label">Individual Price per Lesson</label>
+            <input type="number" class="form-control" id="priceIndividual" th:field="*{priceIndividual}" placeholder="Enter individual price" step="0.01">
+        </div>
+        <div class="mb-3">
+            <label for="priceGroup" class="form-label">Group Price per Lesson</label>
+            <input type="number" class="form-control" id="priceGroup" th:field="*{priceGroup}" placeholder="Enter group price" step="0.01">
         </div>
         <div class="mb-3">
             <label for="currency" class="form-label">Currency</label>

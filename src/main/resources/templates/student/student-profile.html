@@ -18,7 +18,8 @@
             <p class="card-text"><strong>Country:</strong> <span th:text="${student.country}"></span></p>
             <p class="card-text"><strong>Phone Number:</strong> <span th:text="${student.phoneNumber}"></span></p>
             <p class="card-text"><strong>Goal:</strong> <span th:text="${student.globalGoal}"></span></p>
-            <p class="card-text"><strong>Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.price, 1, 0)}"></span></p>
+            <p class="card-text"><strong>Individual Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.priceIndividual, 1, 0)}"></span></p>
+            <p class="card-text"><strong>Group Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.priceGroup, 1, 0)}"></span></p>
             <div th:each="balance : ${balances}">
                 <p class="card-text">
                     <strong>Balance:</strong>

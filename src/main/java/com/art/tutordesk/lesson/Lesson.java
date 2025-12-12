@@ -34,9 +34,6 @@ public class Lesson {
     private String topic;
 
     @EqualsAndHashCode.Exclude
-    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "lesson", orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
-
-    @Transient
-    private PaymentStatus paymentStatus;
 }

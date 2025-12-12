@@ -35,8 +35,14 @@ public class Student {
     @Column(columnDefinition = "TEXT")
     private String globalGoal;
     private Integer age;
-    private BigDecimal price;
+    @Column(name = "price_individual", nullable = false)
+    private BigDecimal priceIndividual;
+
+    @Column(name = "price_group", nullable = false)
+    private BigDecimal priceGroup;
+
     @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false)
     private Currency currency;
     private boolean active = true;
 
