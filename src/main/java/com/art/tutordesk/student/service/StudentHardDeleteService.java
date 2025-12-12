@@ -1,7 +1,9 @@
-package com.art.tutordesk.student;
+package com.art.tutordesk.student.service;
 
-import com.art.tutordesk.lesson.LessonStudentRepository;
+import com.art.tutordesk.balance.BalanceRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.PaymentRepository;
+import com.art.tutordesk.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

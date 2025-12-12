@@ -1,6 +1,7 @@
-package com.art.tutordesk.student;
+package com.art.tutordesk.balance;
 
 import com.art.tutordesk.payment.Currency;
+import com.art.tutordesk.student.Student;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

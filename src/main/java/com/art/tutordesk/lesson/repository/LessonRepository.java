@@ -1,5 +1,6 @@
-package com.art.tutordesk.lesson;
+package com.art.tutordesk.lesson.repository;
 
+import com.art.tutordesk.lesson.Lesson;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

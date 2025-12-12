@@ -1,9 +1,7 @@
-package com.art.tutordesk.lesson.mapper;
+package com.art.tutordesk.lesson;
 
-import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.LessonListDTO;
-import com.art.tutordesk.lesson.LessonProfileDTO;
-import com.art.tutordesk.lesson.PaymentStatusUtil;
+import com.art.tutordesk.lesson.dto.LessonListDTO;
+import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;

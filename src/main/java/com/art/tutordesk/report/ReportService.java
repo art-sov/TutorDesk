@@ -1,8 +1,8 @@
 package com.art.tutordesk.report;
 
-import com.art.tutordesk.lesson.LessonRepository;
+import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.LessonStudentRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.payment.PaymentRepository;

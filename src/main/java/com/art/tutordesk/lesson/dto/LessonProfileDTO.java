@@ -1,5 +1,7 @@
-package com.art.tutordesk.lesson;
+package com.art.tutordesk.lesson.dto;
 
+import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.PaymentStatus;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;

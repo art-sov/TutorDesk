@@ -3,7 +3,7 @@ package com.art.tutordesk.events;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.lesson.PaymentStatus;
-import com.art.tutordesk.student.BalanceService;
+import com.art.tutordesk.balance.BalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

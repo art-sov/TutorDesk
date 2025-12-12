@@ -1,7 +1,7 @@
 package com.art.tutordesk.payment;
 
 import com.art.tutordesk.student.Student;
-import com.art.tutordesk.student.StudentService;
+import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

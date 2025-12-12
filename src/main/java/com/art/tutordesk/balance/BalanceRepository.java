@@ -1,4 +1,4 @@
-package com.art.tutordesk.student;
+package com.art.tutordesk.balance;
 
 import com.art.tutordesk.payment.Currency;
 import org.springframework.data.jpa.repository.JpaRepository;

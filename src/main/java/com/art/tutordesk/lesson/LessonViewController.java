@@ -1,12 +1,10 @@
-package com.art.tutordesk.lesson.controller;
+package com.art.tutordesk.lesson;
 
-import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.LessonListDTO;
-import com.art.tutordesk.lesson.LessonProfileDTO;
-import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.dto.LessonListDTO;
+import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.Student;
-import com.art.tutordesk.student.StudentService;
+import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

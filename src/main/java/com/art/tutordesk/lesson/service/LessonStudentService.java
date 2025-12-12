@@ -2,7 +2,7 @@ package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.LessonStudentRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.student.Student;
 import org.springframework.beans.factory.annotation.Autowired;

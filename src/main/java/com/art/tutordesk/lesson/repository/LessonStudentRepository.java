@@ -1,5 +1,7 @@
-package com.art.tutordesk.lesson;
+package com.art.tutordesk.lesson.repository;
 
+import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
