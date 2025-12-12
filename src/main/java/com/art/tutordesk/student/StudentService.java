@@ -1,11 +1,8 @@
 package com.art.tutordesk.student;
 
-import com.art.tutordesk.events.StudentHardDeletedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 
 import java.util.List;
 
@@ -14,7 +11,7 @@ import java.util.List;
 public class StudentService {
 
     private final StudentRepository studentRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final StudentHardDeleteService studentHardDeleteService;
 
     @Transactional
     public Student saveStudent(Student student) {
@@ -38,8 +35,7 @@ public class StudentService {
 
     @Transactional
     public void hardDeleteStudent(Long studentId) {
-        eventPublisher.publishEvent(new StudentHardDeletedEvent(studentId));
-        studentRepository.deleteById(studentId);
+        studentHardDeleteService.performHardDelete(studentId);
     }
 
     @Transactional
@@ -58,3 +54,4 @@ public class StudentService {
         return studentRepository.findAllByIdIn(studentIds);
     }
 }
+

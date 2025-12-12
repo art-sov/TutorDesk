@@ -2,7 +2,7 @@ package com.art.tutordesk.events;
 
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.payment.Payment;
-import com.art.tutordesk.payment.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.student.BalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -51,8 +51,4 @@ public class BalanceEventListener {
         balanceService.updateBalanceOnPaymentDeletion(payment, payment.getStudent());
     }
 
-    @EventListener
-    public void handleStudentHardDeletion(StudentHardDeletedEvent event) {
-        balanceService.resetBalancesForStudent(event.getStudentId());
-    }
 }
