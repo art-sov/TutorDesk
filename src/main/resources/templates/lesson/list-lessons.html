@@ -17,7 +17,7 @@
                 <th>Date</th>
                 <th>Time</th>
                 <th>Topic</th>
-                <th>Students Count</th>
+                <th>Students</th>
                 <th>Payment Status</th>
             </tr>
             </thead>
@@ -28,7 +28,11 @@
                 <td th:text="${lesson.lessonDate}"></td>
                 <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')}"></td>
                 <td th:text="${lesson.topic}"></td>
-                <td th:text="${lesson.studentsCount}"></td>
+                <td>
+                    <div th:each="lessonStudent : ${lesson.lessonStudents}">
+                        <span th:text="${lessonStudent.student.firstName + ' ' + lessonStudent.student.lastName}"></span>
+                    </div>
+                </td>
                 <td>
                     <span th:if="${lesson.paymentStatus != null}"
                           th:text="${lesson.paymentStatus.name()}"

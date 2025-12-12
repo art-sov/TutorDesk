@@ -13,49 +13,59 @@
         <input type="hidden" th:field="*{id}" />
         <div class="mb-3">
             <label for="firstName" class="form-label">First Name</label>
-            <input type="text" class="form-control" id="firstName" th:field="*{firstName}" placeholder="Enter first name" required>
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('firstName') ? 'is-invalid' : ''}" id="firstName" th:field="*{firstName}" placeholder="Enter first name" required>
+            <div th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="lastName" class="form-label">Last Name</label>
-            <input type="text" class="form-control" id="lastName" th:field="*{lastName}" placeholder="Enter last name" required>
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('lastName') ? 'is-invalid' : ''}" id="lastName" th:field="*{lastName}" placeholder="Enter last name">
+            <div th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="age" class="form-label">Age</label>
-            <input type="number" class="form-control" id="age" th:field="*{age}" placeholder="Enter age">
+            <input type="number" class="form-control" th:classappend="${#fields.hasErrors('age') ? 'is-invalid' : ''}" id="age" th:field="*{age}" placeholder="Enter age">
+            <div th:if="${#fields.hasErrors('age')}" th:errors="*{age}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="knowledgeLevel" class="form-label">Knowledge Level</label>
-            <input type="text" class="form-control" id="knowledgeLevel" th:field="*{knowledgeLevel}" placeholder="e.g., A2, B1, C1">
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('knowledgeLevel') ? 'is-invalid' : ''}" id="knowledgeLevel" th:field="*{knowledgeLevel}" placeholder="e.g., A2, B1, C1">
+            <div th:if="${#fields.hasErrors('knowledgeLevel')}" th:errors="*{knowledgeLevel}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="country" class="form-label">Country</label>
-            <input type="text" class="form-control" id="country" th:field="*{country}" placeholder="Enter country">
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('country') ? 'is-invalid' : ''}" id="country" th:field="*{country}" placeholder="Enter country">
+            <div th:if="${#fields.hasErrors('country')}" th:errors="*{country}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="phoneNumber" class="form-label">Phone Number</label>
-            <input type="text" class="form-control" id="phoneNumber" th:field="*{phoneNumber}" placeholder="Enter phone number">
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('phoneNumber') ? 'is-invalid' : ''}" id="phoneNumber" th:field="*{phoneNumber}" placeholder="Enter phone number">
+            <div th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="globalGoal" class="form-label">Global Goal</label>
-            <textarea class="form-control" id="globalGoal" th:field="*{globalGoal}" rows="3" placeholder="Describe the student's goal"></textarea>
+            <textarea class="form-control" th:classappend="${#fields.hasErrors('globalGoal') ? 'is-invalid' : ''}" id="globalGoal" th:field="*{globalGoal}" rows="3" placeholder="Describe the student's goal"></textarea>
+            <div th:if="${#fields.hasErrors('globalGoal')}" th:errors="*{globalGoal}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="priceIndividual" class="form-label">Individual Price per Lesson</label>
-            <input type="number" class="form-control" id="priceIndividual" th:field="*{priceIndividual}" placeholder="Enter individual price" step="0.01">
+            <input type="number" class="form-control" th:classappend="${#fields.hasErrors('priceIndividual') ? 'is-invalid' : ''}" id="priceIndividual" th:field="*{priceIndividual}" placeholder="Enter individual price" step="0.01">
+            <div th:if="${#fields.hasErrors('priceIndividual')}" th:errors="*{priceIndividual}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="priceGroup" class="form-label">Group Price per Lesson</label>
-            <input type="number" class="form-control" id="priceGroup" th:field="*{priceGroup}" placeholder="Enter group price" step="0.01">
+            <input type="number" class="form-control" th:classappend="${#fields.hasErrors('priceGroup') ? 'is-invalid' : ''}" id="priceGroup" th:field="*{priceGroup}" placeholder="Enter group price" step="0.01">
+            <div th:if="${#fields.hasErrors('priceGroup')}" th:errors="*{priceGroup}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="currency" class="form-label">Currency</label>
-            <select id="currency" th:field="*{currency}" class="form-control">
+            <select id="currency" class="form-control" th:classappend="${#fields.hasErrors('currency') ? 'is-invalid' : ''}" th:field="*{currency}">
                 <option value="">Select Currency</option>
                 <option th:each="curr : ${currencies}"
                         th:value="${curr}"
                         th:text="${curr}"
                         th:selected="${curr == student.currency}">Currency</option>
             </select>
+            <div th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}" class="invalid-feedback"></div>
         </div>
         <button type="submit" class="btn btn-primary">Update Student</button>
         <a href="/students/list" class="btn-secondary">Cancel</a>

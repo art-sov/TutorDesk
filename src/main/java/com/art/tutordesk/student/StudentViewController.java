@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.validation.Valid;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -31,7 +34,11 @@ public class StudentViewController {
     }
 
     @PostMapping("/create")
-    public String createStudent(@ModelAttribute Student student) {
+    public String createStudent(@Valid @ModelAttribute Student student, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("currencies", Currency.values());
+            return "student/add-student";
+        }
         studentService.saveStudent(student);
         return "redirect:/students/list";
     }
@@ -41,7 +48,8 @@ public class StudentViewController {
         List<Student> students;
         if (showInactive) {
             students = studentService.getAllStudentsIncludingInactive();
-        } else {
+        }
+        else {
             students = studentService.getAllActiveStudents();
         }
         model.addAttribute("students", students);
@@ -76,7 +84,11 @@ public class StudentViewController {
     }
 
     @PostMapping("/update/{id}")
-    public String updateStudent(@PathVariable Long id, @ModelAttribute("student") Student student) {
+    public String updateStudent(@PathVariable Long id, @Valid @ModelAttribute("student") Student student, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("currencies", Currency.values());
+            return "student/edit-student";
+        }
         student.setId(id);
         studentService.saveStudent(student);
         return "redirect:/students/profile/{id}";
