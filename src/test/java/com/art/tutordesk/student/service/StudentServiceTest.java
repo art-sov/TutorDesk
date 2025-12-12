@@ -1,7 +1,7 @@
-package com.art.tutordesk.student;
+package com.art.tutordesk.student.service;
 
-import com.art.tutordesk.student.service.StudentHardDeleteService;
-import com.art.tutordesk.student.service.StudentService;
+import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
