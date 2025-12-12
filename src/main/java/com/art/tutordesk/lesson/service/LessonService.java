@@ -95,6 +95,8 @@ public class LessonService {
 
             if (price.compareTo(java.math.BigDecimal.ZERO) == 0) {
                 lessonStudent.setPaymentStatus(PaymentStatus.FREE);
+            } else {
+                lessonStudent.setPaymentStatus(paymentStatus);
             }
 
             LessonStudent savedLessonStudent = lessonStudentService.save(lessonStudent);
