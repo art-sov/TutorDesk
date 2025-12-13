@@ -4,7 +4,10 @@ INSERT INTO students (first_name, last_name, knowledge_level, country, phone_num
 ('Carlos', 'Ruiz', 'A2', 'Spain', '+34-91-555-0123', 'Learn basic conversation skills for upcoming travel', 35, 20.00, 16.00, 'EUR', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('Hanna', 'Petrenko', 'B1', 'Ukraine', '+7-495-555-0182', 'Be able to communicate with foreign colleagues', 26, 22.00, 18.00, 'UAH', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
 ('Ihor', 'Karpenko', 'B1', 'Ukraine', '+8-067-343-01-82', 'Be able to communicate with foreign colleagues', 26, 22.00, 18.00, 'UAH', FALSE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
-('Mohammed', 'Ali', 'C2', 'Egypt', '+20-2-555-0145', 'Achieve near-native fluency for a translation job', 31, 28.00, 22.00, 'USD', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
+('Mohammed', 'Ali', 'C2', 'Egypt', '+20-2-555-0145', 'Achieve near-native fluency for a translation job', 31, 28.00, 22.00, 'USD', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('Artem', 'S', '', '', '', '', 44, 0.00, 0.00, 'USD', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('Bill', 'B', '', '', '', '', 20, 20.00, 15.00, 'PLN', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP()),
+('Den', 'D', '', '', '', '', 16, 23.00, 17.00, 'USD', TRUE, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP());
 
 -- Inserting Lessons (dates are relative to CURRENT_DATE)
 INSERT INTO lessons (lesson_date, start_time, topic) VALUES

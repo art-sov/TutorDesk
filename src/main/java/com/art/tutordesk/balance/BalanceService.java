@@ -125,11 +125,12 @@ public class BalanceService {
     }
 
     @Transactional
-    public void refundLesson(LessonStudent lessonStudent) {
+    public void reverseLessonDebit(LessonStudent lessonStudent) {
         if (lessonStudent.getPaymentStatus() == PaymentStatus.FREE) {
             return;
         }
         Balance balance = getOrCreateBalance(lessonStudent.getStudent(), lessonStudent.getCurrency());
+        // Always add the price back to the balance, effectively reversing the debit
         balance.setAmount(balance.getAmount().add(lessonStudent.getPrice()));
         balance.setLastUpdatedAt(LocalDateTime.now());
         balanceRepository.save(balance);

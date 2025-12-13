@@ -29,8 +29,8 @@
                 <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')}"></td>
                 <td th:text="${lesson.topic}"></td>
                 <td>
-                    <div th:each="lessonStudent : ${lesson.lessonStudents}">
-                        <span th:text="${lessonStudent.student.firstName + ' ' + lessonStudent.student.lastName}"></span>
+                    <div th:each="studentName : ${lesson.studentNames}">
+                        <span th:text="${studentName}"></span>
                     </div>
                 </td>
                 <td>

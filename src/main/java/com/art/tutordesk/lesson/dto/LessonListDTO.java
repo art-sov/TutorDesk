@@ -4,6 +4,7 @@ import com.art.tutordesk.lesson.PaymentStatus;
 import lombok.Data;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
 public class LessonListDTO {
@@ -11,6 +12,6 @@ public class LessonListDTO {
     private LocalDate lessonDate;
     private LocalTime startTime;
     private String topic;
-    private int studentsCount;
+    private List<String> studentNames;
     private PaymentStatus paymentStatus;
 }

@@ -1,13 +1,13 @@
 package com.art.tutordesk.lesson;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -31,8 +31,13 @@ public class Lesson {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull(message = "Lesson date is mandatory")
     private LocalDate lessonDate;
+
+    @NotNull(message = "Start time is mandatory")
     private LocalTime startTime;
+
+    @Size(max = 200, message = "Topic cannot exceed 200 characters")
     private String topic;
 
     @EqualsAndHashCode.Exclude

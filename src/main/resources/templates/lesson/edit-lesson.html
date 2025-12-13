@@ -14,27 +14,31 @@
 
         <div class="mb-3">
             <label for="lessonDate" class="form-label">Lesson Date</label>
-            <input type="date" class="form-control" id="lessonDate" th:field="*{lessonDate}" required>
+            <input type="date" class="form-control" th:classappend="${#fields.hasErrors('lessonDate') ? 'is-invalid' : ''}" id="lessonDate" th:field="*{lessonDate}" required>
+            <div th:if="${#fields.hasErrors('lessonDate')}" th:errors="*{lessonDate}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
             <label for="startTime" class="form-label">Start Time</label>
-            <input type="time" class="form-control" id="startTime" th:field="*{startTime}" required>
+            <input type="time" class="form-control" th:classappend="${#fields.hasErrors('startTime') ? 'is-invalid' : ''}" id="startTime" th:field="*{startTime}" required>
+            <div th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}" class="invalid-feedback"></div>
         </div>
 
         <div class="mb-3">
             <label for="topic" class="form-label">Topic</label>
-            <input type="text" class="form-control" id="topic" th:field="*{topic}" placeholder="Enter lesson topic" required>
+            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('topic') ? 'is-invalid' : ''}" id="topic" th:field="*{topic}" placeholder="Enter lesson topic">
+            <div th:if="${#fields.hasErrors('topic')}" th:errors="*{topic}" class="invalid-feedback"></div>
         </div>
 
         <div class="mb-3">
             <label for="students" class="form-label">Select Students</label>
-            <select multiple class="form-control" id="students" name="selectedStudentIds" size="5">
+            <select multiple class="form-control" th:classappend="${#fields.hasGlobalErrors() ? 'is-invalid' : ''}" id="students" name="selectedStudentIds" size="5">
                 <option th:each="student : ${allStudents}"
                         th:value="${student.id}"
                         th:text="${student.firstName + ' ' + student.lastName}"
                         th:selected="${#lists.contains(selectedStudentIds, student.id)}">
                 </option>
             </select>
+            <div th:if="${#fields.hasGlobalErrors()}" class="invalid-feedback">At least one student must be selected for the lesson.</div>
         </div>
 
         <button type="submit" class="btn btn-primary">Update Lesson</button>

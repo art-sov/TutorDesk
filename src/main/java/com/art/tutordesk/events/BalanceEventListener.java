@@ -2,7 +2,6 @@ package com.art.tutordesk.events;
 
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.payment.Payment;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.balance.BalanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
@@ -23,12 +22,9 @@ public class BalanceEventListener {
     @EventListener
     public void handleLessonStudentDeletion(LessonStudentDeletedEvent event) {
         LessonStudent lessonStudent = event.getLessonStudent();
-        // If a PAID lesson is deleted, refund the student.
-        // This might make them eligible to pay for other lessons.
-        if (lessonStudent.getPaymentStatus() == PaymentStatus.PAID) {
-            balanceService.refundLesson(lessonStudent);
-            balanceService.settleUnpaidLessons(lessonStudent.getStudent());
-        }
+        // Always reverse the debit for a deleted lesson, unless it was FREE
+        balanceService.reverseLessonDebit(lessonStudent);
+        balanceService.settleUnpaidLessons(lessonStudent.getStudent());
     }
 
     @EventListener

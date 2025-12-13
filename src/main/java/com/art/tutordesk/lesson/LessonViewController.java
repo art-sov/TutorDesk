@@ -5,9 +5,12 @@ import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.CollectionUtils;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,9 +45,19 @@ public class LessonViewController {
     }
 
     @PostMapping("/create")
-    public String createLesson(@ModelAttribute Lesson lesson,
+    public String createLesson(@Valid @ModelAttribute Lesson lesson,
+                               BindingResult bindingResult,
                                @RequestParam(value = "selectedStudentIds", required = false) List<Long> selectedStudentIds,
+                               Model model,
                                RedirectAttributes redirectAttributes) {
+        if (CollectionUtils.isEmpty(selectedStudentIds)) {
+            bindingResult.reject("lesson.students.empty", "At least one student must be selected for the lesson.");
+        }
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
+            return "lesson/add-lesson";
+        }
         lessonService.saveLesson(lesson, selectedStudentIds);
         redirectAttributes.addFlashAttribute("message", "Lesson created successfully!");
         return "redirect:/lessons/list";
@@ -69,17 +82,34 @@ public class LessonViewController {
                 .map(Student::getId)
                 .collect(Collectors.toList());
         model.addAttribute("selectedStudentIds", selectedStudentIds);
-        
+
         return "lesson/edit-lesson";
     }
 
     @PostMapping("/update/{id}")
     public String updateLesson(@PathVariable Long id,
-                               @ModelAttribute Lesson lesson,
+                               @Valid @ModelAttribute Lesson lesson,
+                               BindingResult bindingResult,
                                @RequestParam(value = "selectedStudentIds", required = false) List<Long> selectedStudentIds,
+                               Model model,
                                RedirectAttributes redirectAttributes) {
-        lesson.setId(id); // Ensure the lesson ID is set for update
-        lessonService.updateLesson(lesson, selectedStudentIds); // Call updateLesson instead of saveLesson
+        if (CollectionUtils.isEmpty(selectedStudentIds)) {
+            bindingResult.reject("lesson.students.empty", "At least one student must be selected for the lesson.");
+        }
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
+            // Get IDs of students already associated with this lesson to pre-select them on error
+            LessonProfileDTO existingLesson = lessonService.getLessonById(id);
+            List<Long> preSelectedStudentIds = existingLesson.getLessonStudents().stream()
+                    .map(LessonStudent::getStudent)
+                    .map(Student::getId)
+                    .collect(Collectors.toList());
+            model.addAttribute("selectedStudentIds", preSelectedStudentIds);
+            return "lesson/edit-lesson";
+        }
+
+        lesson.setId(id);
+        lessonService.updateLesson(lesson, selectedStudentIds);
         redirectAttributes.addFlashAttribute("message", "Lesson updated successfully!");
         return "redirect:/lessons/profile/{id}";
     }
@@ -91,4 +121,3 @@ public class LessonViewController {
         return "redirect:/lessons/list";
     }
 }
-
