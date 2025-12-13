@@ -26,6 +26,10 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
     List<LessonStudent> findAllByStudentAndPaymentStatusAndCurrencyOrderByLessonLessonDateAsc(
             Student student, PaymentStatus paymentStatus, com.art.tutordesk.payment.Currency currency);
 
+    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
+            Student student, com.art.tutordesk.payment.Currency currency, PaymentStatus paymentStatus);
+
+
     @Modifying
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);

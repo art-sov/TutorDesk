@@ -1,5 +1,6 @@
 package com.art.tutordesk.payment;
 
+import com.art.tutordesk.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -24,4 +25,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Modifying
     @Query("DELETE FROM Payment p WHERE p.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
+
+    List<Payment> findAllByStudentAndCurrencyOrderByPaymentDateAsc(Student student, Currency currency);
 }

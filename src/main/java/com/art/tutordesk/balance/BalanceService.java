@@ -5,6 +5,7 @@ import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.Payment;
+import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +22,7 @@ public class BalanceService {
 
     private final BalanceRepository balanceRepository;
     private final LessonStudentRepository lessonStudentRepository;
+    private final PaymentRepository paymentRepository;
 
     @Transactional
     public Balance getOrCreateBalance(Student student, Currency currency) {
@@ -39,19 +42,10 @@ public class BalanceService {
         if (lessonStudent.getPaymentStatus() == PaymentStatus.FREE) {
             return; // Do nothing for FREE lessons
         }
-
+        // Always debit the balance for the lesson
         BigDecimal lessonPrice = lessonStudent.getPrice();
         Balance balance = getOrCreateBalance(student, lessonStudent.getCurrency());
-        BigDecimal currentAmount = balance.getAmount();
-
-        // Check if balance is sufficient BEFORE debiting
-        if (currentAmount.compareTo(lessonPrice) >= 0) {
-            lessonStudent.setPaymentStatus(PaymentStatus.PAID);
-            lessonStudentRepository.save(lessonStudent); // Save the updated status
-        }
-
-        // Always debit the balance for the lesson
-        balance.setAmount(currentAmount.subtract(lessonPrice));
+        balance.setAmount(balance.getAmount().subtract(lessonPrice));
         balance.setLastUpdatedAt(LocalDateTime.now());
         balanceRepository.save(balance);
     }
@@ -88,39 +82,47 @@ public class BalanceService {
             balanceRepository.deleteAll(balances);
         }
     }
-    
+
     public List<Balance> getAllBalancesForStudent(Long studentId) {
         return balanceRepository.findByStudentId(studentId);
     }
 
     @Transactional
-    public void settleUnpaidLessons(Student student) {
-        List<Balance> studentBalances = balanceRepository.findByStudentId(student.getId());
+    public void resyncPaymentStatus(Student student) {
+        List<Currency> currencies = balanceRepository.findByStudentId(student.getId()).stream()
+                .map(Balance::getCurrency)
+                .distinct()
+                .collect(Collectors.toList());
 
-        // Settle debts for each currency the student has a balance in
-        for (Balance balance : studentBalances) {
-            if (balance.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                continue; // Skip if balance is not positive
-            }
+        for (Currency currency : currencies) {
+            // 1. Get all payments and sum them up.
+            List<Payment> payments = paymentRepository.findAllByStudentAndCurrencyOrderByPaymentDateAsc(student, currency);
+            BigDecimal totalPayments = payments.stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-            List<LessonStudent> unpaidLessons = lessonStudentRepository
-                    .findAllByStudentAndPaymentStatusAndCurrencyOrderByLessonLessonDateAsc(
-                            student, PaymentStatus.UNPAID, balance.getCurrency());
+            // 2. Get all lessons (that are not FREE) and iterate through them chronologically.
+            List<LessonStudent> lessons = lessonStudentRepository.findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(student, currency, PaymentStatus.FREE);
 
-            for (LessonStudent unpaidLesson : unpaidLessons) {
-                BigDecimal lessonPrice = unpaidLesson.getPrice();
-                if (balance.getAmount().compareTo(lessonPrice) >= 0) {
-                    // Pay for the lesson
-                    balance.setAmount(balance.getAmount().subtract(lessonPrice));
-                    unpaidLesson.setPaymentStatus(PaymentStatus.PAID);
-                    lessonStudentRepository.save(unpaidLesson);
-                } else {
-                    // Not enough money for the next oldest lesson, so stop for this currency
-                    break;
+            BigDecimal runningBalance = totalPayments;
+            boolean changed = false;
+
+            for (LessonStudent lesson : lessons) {
+                // Subtract the price of the current lesson to find the balance at this point in time
+                runningBalance = runningBalance.subtract(lesson.getPrice());
+                
+                // If the running balance was non-negative before this lesson, it's considered paid.
+                PaymentStatus newStatus = (runningBalance.compareTo(BigDecimal.ZERO) >= 0) ? PaymentStatus.PAID : PaymentStatus.UNPAID;
+
+                if (lesson.getPaymentStatus() != newStatus) {
+                    lesson.setPaymentStatus(newStatus);
+                    changed = true;
                 }
             }
-            balance.setLastUpdatedAt(LocalDateTime.now());
-            balanceRepository.save(balance);
+
+            if (changed) {
+                lessonStudentRepository.saveAll(lessons);
+            }
         }
     }
 
