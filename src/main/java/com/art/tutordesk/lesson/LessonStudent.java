@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 @Table(name = "lesson_student")
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = "lesson") // Exclude to prevent StackOverflowError
+@ToString(exclude = {"lesson", "student"}) // Exclude to prevent StackOverflowError
 public class LessonStudent {
 
     @Id

@@ -19,6 +19,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -83,6 +84,7 @@ public class Student {
     private LocalDateTime updatedAt;
 
     @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 }
