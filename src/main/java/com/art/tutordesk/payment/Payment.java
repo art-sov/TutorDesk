@@ -10,6 +10,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -28,17 +30,23 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotNull(message = "Payment date is mandatory")
     private LocalDate paymentDate;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
+    @NotNull(message = "Payment method is mandatory")
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;
 
+    @NotNull(message = "Amount is mandatory")
+    @DecimalMin(value = "0.01")
     private BigDecimal amount;
 
+    @NotNull(message = "Currency is mandatory")
     @Enumerated(EnumType.STRING)
     private Currency currency;
 }
