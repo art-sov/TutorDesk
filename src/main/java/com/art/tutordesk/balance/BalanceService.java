@@ -56,15 +56,7 @@ public class BalanceService {
     }
 
     @Transactional
-    public void resetBalancesForStudent(Long studentId) {
-        List<Balance> balances = balanceRepository.findByStudentId(studentId);
-        if (!balances.isEmpty()) {
-            balanceRepository.deleteAll(balances);
-        }
-    }
-
-    @Transactional
-    public void resyncPaymentStatus(Long studentId) { // Changed signature
+    public void resyncPaymentStatus(Long studentId) {
         Student student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
 
@@ -73,7 +65,7 @@ public class BalanceService {
         currencies.addAll(balanceRepository.findCurrenciesByStudentId(studentId));
 
         for (Currency currency : currencies) {
-            resyncPaymentStatusForCurrency(student, currency); // Pass managed Student object
+            resyncPaymentStatusForCurrency(student, currency);
         }
     }
 

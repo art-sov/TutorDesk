@@ -18,7 +18,10 @@
 <!--todo implement popup for delete verification-->
             <a th:href="@{/payments/edit/{id}(id=${payment.id})}" class="btn btn-primary btn-profile-action">Edit Payment</a>
             <form th:action="@{/payments/delete/{id}(id=${payment.id})}" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-primary btn-profile-action">Delete Payment</button>
+                <button type="submit" class="btn btn-primary btn-profile-action"
+                        style="background: #ff0000; box-shadow: 0 4px 15px rgba(255, 0, 0, 0.6);"
+                        onclick="return confirm('WARNING: Are you sure you want to permanently delete this payment? This action cannot be undone and will affect student balance.');">Delete Payment
+                </button>
             </form>
             <a href="/payments/list" class="btn btn-secondary">Back to Payment List</a>
         </div>
