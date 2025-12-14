@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -37,7 +36,6 @@ public class BalanceService {
         }
         Balance balance = getOrCreateBalance(studentId, currency);
         balance.setAmount(balance.getAmount().add(delta));
-        balance.setLastUpdatedAt(LocalDateTime.now());
         // No explicit save needed due to dirty checking
     }
     
@@ -50,7 +48,6 @@ public class BalanceService {
                     newBalance.setStudent(student);
                     newBalance.setAmount(BigDecimal.ZERO);
                     newBalance.setCurrency(currency);
-                    newBalance.setLastUpdatedAt(LocalDateTime.now());
                     return balanceRepository.save(newBalance);
                 });
     }
