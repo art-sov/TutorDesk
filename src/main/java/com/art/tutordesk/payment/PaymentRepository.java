@@ -16,8 +16,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByPaymentDateGreaterThanEqual(LocalDate startDate);
 
-    @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate " +
-            "AND (:studentIds IS NULL OR p.student.id IN :studentIds)")
+    @Query("""
+            SELECT p FROM Payment p
+            WHERE p.paymentDate BETWEEN :startDate AND :endDate
+            AND (:studentIds IS NULL OR p.student.id IN :studentIds)
+            """)
     List<Payment> findByFilters(@Param("startDate") LocalDate startDate,
                                 @Param("endDate") LocalDate endDate,
                                 @Param("studentIds") List<Long> studentIds);
