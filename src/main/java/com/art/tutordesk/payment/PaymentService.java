@@ -1,10 +1,8 @@
 package com.art.tutordesk.payment;
 
-import com.art.tutordesk.events.PaymentCreatedEvent;
-import com.art.tutordesk.events.PaymentDeletedEvent;
-import com.art.tutordesk.events.PaymentModifiedEvent;
+import com.art.tutordesk.balance.BalanceService;
+import com.art.tutordesk.student.Student;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +14,7 @@ import java.util.List;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final BalanceService balanceService;
 
     public List<Payment> getAllPayments() {
         return paymentRepository.findAll();
@@ -30,32 +28,51 @@ public class PaymentService {
     @Transactional
     public Payment createPayment(Payment payment) {
         Payment savedPayment = paymentRepository.save(payment);
-        eventPublisher.publishEvent(new PaymentCreatedEvent(savedPayment));
+        Student student = savedPayment.getStudent();
+        
+        // Use the new generic changeBalance method
+        balanceService.resyncPaymentStatus(student.getId());
+        
         return savedPayment;
     }
 
     @Transactional
     public Payment updatePayment(Payment payment) {
-        // Fetch existing payment to get old amount for balance calculation
         Payment existingPayment = paymentRepository.findById(payment.getId())
                 .orElseThrow(() -> new RuntimeException("Payment not found for update with id: " + payment.getId()));
+        
         BigDecimal oldAmount = existingPayment.getAmount();
+        BigDecimal newAmount = payment.getAmount();
+        BigDecimal delta = newAmount.subtract(oldAmount);
+        
+        Student student = existingPayment.getStudent();
 
         // Save the updated payment information
-        Payment updatedPayment = paymentRepository.save(payment);
+        paymentRepository.save(payment);
 
-        // Publish event with old amount for balance adjustment
-        eventPublisher.publishEvent(new PaymentModifiedEvent(updatedPayment, oldAmount));
-        return updatedPayment;
+        // Use the new generic changeBalance method
+        balanceService.changeBalance(student.getId(), payment.getCurrency(), delta);
+        balanceService.resyncPaymentStatus(student.getId());
+        
+        return payment;
     }
 
     @Transactional
     public void deletePayment(Long id) {
-        // Fetch payment to publish event before deletion
         Payment payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found for deletion with id: " + id));
+        
+        Student student = payment.getStudent();
+        BigDecimal delta = payment.getAmount().negate(); // The delta is the negative of the payment amount
 
-        eventPublisher.publishEvent(new PaymentDeletedEvent(payment));
+        // Update balance *before* deleting the payment
+        balanceService.changeBalance(student.getId(), payment.getCurrency(), delta);
+        
+        // Delete the actual payment
         paymentRepository.deleteById(id);
+
+        // Resync statuses after all DB changes are done within this transaction
+        balanceService.resyncPaymentStatus(student.getId());
     }
 }
+

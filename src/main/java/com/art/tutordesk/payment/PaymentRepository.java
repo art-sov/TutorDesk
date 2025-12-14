@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -27,4 +28,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     void deleteAllByStudentId(@Param("studentId") Long studentId);
 
     List<Payment> findAllByStudentAndCurrencyOrderByPaymentDateAsc(Student student, Currency currency);
+
+    @Query("""
+        SELECT coalesce(SUM(p.amount), 0)
+        FROM Payment p
+        WHERE p.student = :student AND p.currency = :currency
+        """)
+    BigDecimal sumPayments(@Param("student") Student student, @Param("currency") Currency currency);
 }

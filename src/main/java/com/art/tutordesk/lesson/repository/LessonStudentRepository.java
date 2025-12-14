@@ -2,6 +2,7 @@ package com.art.tutordesk.lesson.repository;
 
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 
 @Repository
 public interface LessonStudentRepository extends JpaRepository<LessonStudent, Long> {
@@ -33,5 +35,9 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
     @Modifying
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
+
+    @Query("SELECT DISTINCT ls.currency FROM LessonStudent ls WHERE ls.student.id = :studentId")
+    Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
+
 
 }

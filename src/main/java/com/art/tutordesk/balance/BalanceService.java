@@ -1,20 +1,21 @@
 package com.art.tutordesk.balance;
 
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
-import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +24,28 @@ public class BalanceService {
     private final BalanceRepository balanceRepository;
     private final LessonStudentRepository lessonStudentRepository;
     private final PaymentRepository paymentRepository;
+    private final StudentRepository studentRepository;
+
+    public List<Balance> getAllBalancesForStudent(Long studentId) {
+        return balanceRepository.findByStudentId(studentId);
+    }
 
     @Transactional
-    public Balance getOrCreateBalance(Student student, Currency currency) {
-        return balanceRepository.findByStudentIdAndCurrency(student.getId(), currency)
+    public void changeBalance(Long studentId, Currency currency, BigDecimal delta) {
+        if (delta.compareTo(BigDecimal.ZERO) == 0) {
+            return; // No change
+        }
+        Balance balance = getOrCreateBalance(studentId, currency);
+        balance.setAmount(balance.getAmount().add(delta));
+        balance.setLastUpdatedAt(LocalDateTime.now());
+        // No explicit save needed due to dirty checking
+    }
+    
+    private Balance getOrCreateBalance(Long studentId, Currency currency) {
+        return balanceRepository.findByStudentIdAndCurrency(studentId, currency)
                 .orElseGet(() -> {
+                    Student student = studentRepository.findById(studentId)
+                            .orElseThrow(() -> new IllegalStateException("Student not found with id: " + studentId));
                     Balance newBalance = new Balance();
                     newBalance.setStudent(student);
                     newBalance.setAmount(BigDecimal.ZERO);
@@ -38,44 +56,6 @@ public class BalanceService {
     }
 
     @Transactional
-    public void updateBalanceOnLessonCreation(LessonStudent lessonStudent, Student student) {
-        if (lessonStudent.getPaymentStatus() == PaymentStatus.FREE) {
-            return; // Do nothing for FREE lessons
-        }
-        // Always debit the balance for the lesson
-        BigDecimal lessonPrice = lessonStudent.getPrice();
-        Balance balance = getOrCreateBalance(student, lessonStudent.getCurrency());
-        balance.setAmount(balance.getAmount().subtract(lessonPrice));
-        balance.setLastUpdatedAt(LocalDateTime.now());
-        balanceRepository.save(balance);
-    }
-
-    @Transactional
-    public void updateBalanceOnPaymentCreation(Payment payment, Student student) {
-        Balance balance = getOrCreateBalance(student, payment.getCurrency());
-        balance.setAmount(balance.getAmount().add(payment.getAmount())); // Payment created: add its amount
-        balance.setLastUpdatedAt(LocalDateTime.now());
-        balanceRepository.save(balance);
-    }
-
-    @Transactional
-    public void updateBalanceOnPaymentModification(Payment payment, Student student, BigDecimal oldPaymentAmount) {
-        Balance balance = getOrCreateBalance(student, payment.getCurrency());
-        BigDecimal currentPaymentAmount = payment.getAmount();
-        balance.setAmount(balance.getAmount().subtract(oldPaymentAmount).add(currentPaymentAmount)); // Remove old amount, add new amount
-        balance.setLastUpdatedAt(LocalDateTime.now());
-        balanceRepository.save(balance);
-    }
-
-    @Transactional
-    public void updateBalanceOnPaymentDeletion(Payment payment, Student student) {
-        Balance balance = getOrCreateBalance(student, payment.getCurrency());
-        balance.setAmount(balance.getAmount().subtract(payment.getAmount())); // Payment deleted, subtract amount
-        balance.setLastUpdatedAt(LocalDateTime.now());
-        balanceRepository.save(balance);
-    }
-
-    @Transactional
     public void resetBalancesForStudent(Long studentId) {
         List<Balance> balances = balanceRepository.findByStudentId(studentId);
         if (!balances.isEmpty()) {
@@ -83,58 +63,35 @@ public class BalanceService {
         }
     }
 
-    public List<Balance> getAllBalancesForStudent(Long studentId) {
-        return balanceRepository.findByStudentId(studentId);
-    }
-
     @Transactional
-    public void resyncPaymentStatus(Student student) {
-        List<Currency> currencies = balanceRepository.findByStudentId(student.getId()).stream()
-                .map(Balance::getCurrency)
-                .distinct()
-                .collect(Collectors.toList());
+    public void resyncPaymentStatus(Long studentId) { // Changed signature
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found with id: " + studentId));
+
+        Set<Currency> currencies = new HashSet<>();
+        currencies.addAll(lessonStudentRepository.findCurrenciesByStudentId(studentId));
+        currencies.addAll(balanceRepository.findCurrenciesByStudentId(studentId));
 
         for (Currency currency : currencies) {
-            // 1. Get all payments and sum them up.
-            List<Payment> payments = paymentRepository.findAllByStudentAndCurrencyOrderByPaymentDateAsc(student, currency);
-            BigDecimal totalPayments = payments.stream()
-                    .map(Payment::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-            // 2. Get all lessons (that are not FREE) and iterate through them chronologically.
-            List<LessonStudent> lessons = lessonStudentRepository.findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(student, currency, PaymentStatus.FREE);
-
-            BigDecimal runningBalance = totalPayments;
-            boolean changed = false;
-
-            for (LessonStudent lesson : lessons) {
-                // Subtract the price of the current lesson to find the balance at this point in time
-                runningBalance = runningBalance.subtract(lesson.getPrice());
-                
-                // If the running balance was non-negative before this lesson, it's considered paid.
-                PaymentStatus newStatus = (runningBalance.compareTo(BigDecimal.ZERO) >= 0) ? PaymentStatus.PAID : PaymentStatus.UNPAID;
-
-                if (lesson.getPaymentStatus() != newStatus) {
-                    lesson.setPaymentStatus(newStatus);
-                    changed = true;
-                }
-            }
-
-            if (changed) {
-                lessonStudentRepository.saveAll(lessons);
-            }
+            resyncPaymentStatusForCurrency(student, currency); // Pass managed Student object
         }
     }
 
-    @Transactional
-    public void reverseLessonDebit(LessonStudent lessonStudent) {
-        if (lessonStudent.getPaymentStatus() == PaymentStatus.FREE) {
-            return;
+    private void resyncPaymentStatusForCurrency(Student student, Currency currency) {
+        BigDecimal credit = paymentRepository.sumPayments(student, currency);
+
+        List<LessonStudent> lessons =
+                lessonStudentRepository
+                        .findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
+                                student, currency, PaymentStatus.FREE);
+
+        for (LessonStudent lesson : lessons) {
+            if (credit.compareTo(lesson.getPrice()) >= 0) {
+                lesson.setPaymentStatus(PaymentStatus.PAID);
+                credit = credit.subtract(lesson.getPrice());
+            } else {
+                lesson.setPaymentStatus(PaymentStatus.UNPAID);
+            }
         }
-        Balance balance = getOrCreateBalance(lessonStudent.getStudent(), lessonStudent.getCurrency());
-        // Always add the price back to the balance, effectively reversing the debit
-        balance.setAmount(balance.getAmount().add(lessonStudent.getPrice()));
-        balance.setLastUpdatedAt(LocalDateTime.now());
-        balanceRepository.save(balance);
     }
 }

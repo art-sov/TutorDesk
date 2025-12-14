@@ -1,5 +1,6 @@
 package com.art.tutordesk.lesson;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -41,6 +42,6 @@ public class Lesson {
     private String topic;
 
     @EqualsAndHashCode.Exclude
-    @OneToMany(mappedBy = "lesson", orphanRemoval = true)
+    @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 }
