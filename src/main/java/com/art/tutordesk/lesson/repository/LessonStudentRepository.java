@@ -24,13 +24,9 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             @Param("studentIds") List<Long> studentIds);
-            
-    List<LessonStudent> findAllByStudentAndPaymentStatusAndCurrencyOrderByLessonLessonDateAsc(
-            Student student, PaymentStatus paymentStatus, com.art.tutordesk.payment.Currency currency);
 
     List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
             Student student, com.art.tutordesk.payment.Currency currency, PaymentStatus paymentStatus);
-
 
     @Modifying
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")
@@ -38,6 +34,4 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
 
     @Query("SELECT DISTINCT ls.currency FROM LessonStudent ls WHERE ls.student.id = :studentId")
     Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
-
-
 }

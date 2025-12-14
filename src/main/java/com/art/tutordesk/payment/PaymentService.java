@@ -31,6 +31,7 @@ public class PaymentService {
         Student student = savedPayment.getStudent();
         
         // Use the new generic changeBalance method
+        balanceService.changeBalance(student.getId(), savedPayment.getCurrency(), savedPayment.getAmount());
         balanceService.resyncPaymentStatus(student.getId());
         
         return savedPayment;
