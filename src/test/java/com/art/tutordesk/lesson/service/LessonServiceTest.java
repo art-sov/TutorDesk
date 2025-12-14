@@ -1,7 +1,6 @@
 package com.art.tutordesk.lesson.service;
 
-import com.art.tutordesk.events.LessonStudentCreatedEvent;
-import com.art.tutordesk.events.LessonStudentDeletedEvent;
+import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonMapper;
 import com.art.tutordesk.lesson.LessonStudent;
@@ -19,7 +18,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -29,8 +27,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -54,7 +50,7 @@ class LessonServiceTest {
     @Mock
     private LessonStudentService lessonStudentService;
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private BalanceService balanceService;
     @Mock
     private LessonMapper lessonMapper;
 
@@ -64,11 +60,13 @@ class LessonServiceTest {
     private Lesson lesson1;
     private Student student1;
     private Student student2;
+    private Student student3;
 
     @BeforeEach
     void setUp() {
         student1 = createStudent(1L, "John", "Doe", new BigDecimal("25.00"), new BigDecimal("20.00"), Currency.USD);
         student2 = createStudent(2L, "Jane", "Smith", new BigDecimal("30.00"), new BigDecimal("24.00"), Currency.PLN);
+        student3 = createStudent(3L, "Charlie", "Brown", new BigDecimal("20.00"), new BigDecimal("15.00"), Currency.USD);
 
         lesson1 = new Lesson();
         lesson1.setId(1L);
@@ -171,7 +169,8 @@ class LessonServiceTest {
         verify(studentService, never()).getStudentsByIds(any());
         verify(lessonStudentService, never()).buildLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class));
         verify(lessonStudentService, never()).save(any(LessonStudent.class));
-        verify(eventPublisher, never()).publishEvent(any());
+        verify(balanceService, never()).changeBalance(anyLong(), any(Currency.class), any(BigDecimal.class));
+        verify(balanceService, never()).resyncPaymentStatus(anyLong());
     }
 
     @Test
@@ -195,7 +194,8 @@ class LessonServiceTest {
         ArgumentCaptor<LessonStudent> lessonStudentCaptor = ArgumentCaptor.forClass(LessonStudent.class);
 
         verify(lessonStudentService, times(1)).save(lessonStudentCaptor.capture());
-        verify(eventPublisher, times(1)).publishEvent(any(LessonStudentCreatedEvent.class));
+        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceIndividual().negate()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
         assertEquals(student1.getPriceIndividual(), lessonStudentCaptor.getValue().getPrice());
         assertEquals(PaymentStatus.UNPAID, lessonStudentCaptor.getValue().getPaymentStatus());
     }
@@ -207,21 +207,24 @@ class LessonServiceTest {
         when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
         when(studentService.getStudentsByIds(selectedStudentIds)).thenReturn(Arrays.asList(student1, student2));
 
+        // Mock buildLessonStudent for student1
         LessonStudent ls1 = new LessonStudent();
         ls1.setStudent(student1);
         ls1.setLesson(lesson1);
         ls1.setCurrency(student1.getCurrency());
         ls1.setPrice(student1.getPriceGroup());
+        when(lessonStudentService.buildLessonStudent(eq(student1), eq(lesson1), any(PaymentStatus.class))).thenReturn(ls1);
+        when(lessonStudentService.save(ls1)).thenReturn(ls1);
+
+        // Mock buildLessonStudent for student2
         LessonStudent ls2 = new LessonStudent();
         ls2.setStudent(student2);
         ls2.setLesson(lesson1);
         ls2.setCurrency(student2.getCurrency());
         ls2.setPrice(student2.getPriceGroup());
-
-        when(lessonStudentService.buildLessonStudent(eq(student1), eq(lesson1), any(PaymentStatus.class))).thenReturn(ls1);
         when(lessonStudentService.buildLessonStudent(eq(student2), eq(lesson1), any(PaymentStatus.class))).thenReturn(ls2);
-        when(lessonStudentService.save(ls1)).thenReturn(ls1);
         when(lessonStudentService.save(ls2)).thenReturn(ls2);
+
 
         lessonService.saveLesson(new Lesson(), selectedStudentIds);
 
@@ -229,10 +232,19 @@ class LessonServiceTest {
         verify(lessonStudentService, times(2)).save(lessonStudentCaptor.capture());
 
         List<LessonStudent> capturedLessonStudents = lessonStudentCaptor.getAllValues();
-        assertEquals(student1.getPriceGroup(), capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student1)).findFirst().get().getPrice());
-        assertEquals(student2.getPriceGroup(), capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student2)).findFirst().get().getPrice());
+        Optional<LessonStudent> first = capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student1)).findFirst();
+        Optional<LessonStudent> second = capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student2)).findFirst();
 
-        verify(eventPublisher, times(2)).publishEvent(any(LessonStudentCreatedEvent.class));
+        assertTrue(first.isPresent());
+        assertEquals(student1.getPriceGroup(), first.get().getPrice());
+
+        assertTrue(second.isPresent());
+        assertEquals(student2.getPriceGroup(), second.get().getPrice());
+
+        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceGroup().negate()));
+        verify(balanceService, times(1)).changeBalance(eq(student2.getId()), eq(student2.getCurrency()), eq(student2.getPriceGroup().negate()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student2.getId()));
     }
 
     // Test cases for updateLesson
@@ -247,7 +259,7 @@ class LessonServiceTest {
     }
 
     @Test
-    void updateLesson_shouldPublishDeleteEvent_whenStudentsAreRemoved() {
+    void updateLesson_shouldReverseDebitAndResync_whenStudentsAreRemoved() {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
         lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
@@ -261,24 +273,19 @@ class LessonServiceTest {
 
         lessonService.updateLesson(lessonToUpdate, Collections.emptyList());
 
-        // Verify a delete event was published
-        ArgumentCaptor<LessonStudentDeletedEvent> eventCaptor = ArgumentCaptor.forClass(LessonStudentDeletedEvent.class);
-        verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
-        assertEquals(student1, eventCaptor.getValue().getLessonStudent().getStudent());
-
-        // Verify no create events were published
-        verify(eventPublisher, never()).publishEvent(any(LessonStudentCreatedEvent.class));
+        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceIndividual()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
         assertTrue(lesson1.getLessonStudents().isEmpty());
     }
 
     @Test
-    void updateLesson_shouldPublishCreateAndDeleteEvents_andHandlePricing() {
+    void updateLesson_shouldHandleStudentChangesAndPricing() {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
         lessonToUpdate.setTopic("Updated Topic");
 
         // Existing students in the lesson
-        Student studentToRemove = createStudent(3L, "Charlie", "Brown", new BigDecimal("20.00"), new BigDecimal("15.00"), Currency.USD);
+        Student studentToRemove = student3; // student3 from setUp
         Student studentToKeep = student2; // student2 from setUp
 
         LessonStudent lsToRemove = createLessonStudent(10L, lesson1, studentToRemove, PaymentStatus.UNPAID, studentToRemove.getPriceIndividual(), studentToRemove.getCurrency());
@@ -310,19 +317,16 @@ class LessonServiceTest {
 
         lessonService.updateLesson(lessonToUpdate, updatedStudentIds);
 
-        // Verify delete events for the removed student and the one that was kept (cleared and re-added)
-        ArgumentCaptor<LessonStudentDeletedEvent> deleteCaptor = ArgumentCaptor.forClass(LessonStudentDeletedEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(deleteCaptor.capture());
-        Set<Long> deletedStudentIds = deleteCaptor.getAllValues().stream().map(e -> e.getLessonStudent().getStudent().getId()).collect(Collectors.toSet());
-        assertTrue(deletedStudentIds.contains(studentToRemove.getId()));
-        assertTrue(deletedStudentIds.contains(studentToKeep.getId()));
+        // Verify balance changes
+        verify(balanceService, times(1)).changeBalance(eq(studentToRemove.getId()), eq(studentToRemove.getCurrency()), eq(studentToRemove.getPriceIndividual())); // Removed student's debit reversed
+        verify(balanceService, times(1)).changeBalance(eq(studentToKeep.getId()), eq(studentToKeep.getCurrency()), eq(studentToKeep.getPriceIndividual())); // Kept student's old debit reversed
+        verify(balanceService, times(1)).changeBalance(eq(studentToKeep.getId()), eq(studentToKeep.getCurrency()), eq(studentToKeep.getPriceGroup().negate())); // Kept student's new debit
+        verify(balanceService, times(1)).changeBalance(eq(studentToAdd.getId()), eq(studentToAdd.getCurrency()), eq(studentToAdd.getPriceGroup().negate())); // Added student's new debit
 
-        // Verify create events for the added student and the one that was kept
-        ArgumentCaptor<LessonStudentCreatedEvent> createCaptor = ArgumentCaptor.forClass(LessonStudentCreatedEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(createCaptor.capture());
-        Set<Long> createdStudentIds = createCaptor.getAllValues().stream().map(e -> e.getLessonStudent().getStudent().getId()).collect(Collectors.toSet());
-        assertTrue(createdStudentIds.contains(studentToAdd.getId()));
-        assertTrue(createdStudentIds.contains(studentToKeep.getId()));
+        // Verify resync for all affected students
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToRemove.getId()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToKeep.getId()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToAdd.getId()));
 
         // Verify pricing logic
         ArgumentCaptor<LessonStudent> lessonStudentCaptor = ArgumentCaptor.forClass(LessonStudent.class);
@@ -330,14 +334,19 @@ class LessonServiceTest {
         List<LessonStudent> savedLessonStudents = lessonStudentCaptor.getAllValues();
 
         // Since there are two students, both should have group pricing
-        assertEquals(studentToAdd.getPriceGroup(), savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToAdd)).findFirst().get().getPrice());
-        assertEquals(studentToKeep.getPriceGroup(), savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToKeep)).findFirst().get().getPrice());
+        Optional<LessonStudent> first = savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToAdd)).findFirst();
+        Optional<LessonStudent> second = savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToKeep)).findFirst();
+
+        assertTrue(first.isPresent());
+        assertTrue(second.isPresent());
+        assertEquals(studentToAdd.getPriceGroup(), first.get().getPrice());
+        assertEquals(studentToKeep.getPriceGroup(), second.get().getPrice());
     }
 
 
     // Test cases for deleteLesson
     @Test
-    void deleteLesson_shouldPublishDeleteEventsAndCallRepository() {
+    void deleteLesson_shouldReverseDebitsAndResyncForAffectedStudents() {
         // Setup: Lesson has two students
         LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
         LessonStudent ls2 = createLessonStudent(2L, lesson1, student2, PaymentStatus.UNPAID, student2.getPriceIndividual(), student2.getCurrency());
@@ -347,16 +356,16 @@ class LessonServiceTest {
 
         lessonService.deleteLesson(1L);
 
-        // Verify that delete events were published for both students
-        ArgumentCaptor<LessonStudentDeletedEvent> deleteCaptor = ArgumentCaptor.forClass(LessonStudentDeletedEvent.class);
-        verify(eventPublisher, times(2)).publishEvent(deleteCaptor.capture());
-        // Check if the correct LessonStudent objects are in the events (based on IDs or student data)
-        Set<Long> deletedLsIds = deleteCaptor.getAllValues().stream().map(e -> e.getLessonStudent().getId()).collect(Collectors.toSet());
-        assertTrue(deletedLsIds.contains(ls1.getId()));
-        assertTrue(deletedLsIds.contains(ls2.getId()));
+        // Verify balance changes
+        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(ls1.getPrice()));
+        verify(balanceService, times(1)).changeBalance(eq(student2.getId()), eq(student2.getCurrency()), eq(ls2.getPrice()));
 
-        // Verify the repository delete method was called
+        // Verify the lesson repository delete method was called
         verify(lessonRepository, times(1)).deleteById(1L);
+
+        // Verify resync for all affected students
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
+        verify(balanceService, times(1)).resyncPaymentStatus(eq(student2.getId()));
     }
 
     private Student createStudent(Long id, String firstName, String lastName, BigDecimal priceIndividual, BigDecimal priceGroup, Currency currency) {
