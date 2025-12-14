@@ -17,22 +17,19 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByPaymentDateGreaterThanEqual(LocalDate startDate);
 
     @Query("SELECT p FROM Payment p WHERE p.paymentDate BETWEEN :startDate AND :endDate " +
-           "AND (:studentIds IS NULL OR p.student.id IN :studentIds)")
-    List<Payment> findByFilters(
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            @Param("studentIds") List<Long> studentIds);
+            "AND (:studentIds IS NULL OR p.student.id IN :studentIds)")
+    List<Payment> findByFilters(@Param("startDate") LocalDate startDate,
+                                @Param("endDate") LocalDate endDate,
+                                @Param("studentIds") List<Long> studentIds);
 
     @Modifying
     @Query("DELETE FROM Payment p WHERE p.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
 
-    List<Payment> findAllByStudentAndCurrencyOrderByPaymentDateAsc(Student student, Currency currency);
-
     @Query("""
-        SELECT coalesce(SUM(p.amount), 0)
-        FROM Payment p
-        WHERE p.student = :student AND p.currency = :currency
-        """)
+            SELECT coalesce(SUM(p.amount), 0)
+            FROM Payment p
+            WHERE p.student = :student AND p.currency = :currency
+            """)
     BigDecimal sumPayments(@Param("student") Student student, @Param("currency") Currency currency);
 }

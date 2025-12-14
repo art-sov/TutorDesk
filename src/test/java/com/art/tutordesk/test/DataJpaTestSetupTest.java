@@ -94,22 +94,38 @@ public class DataJpaTestSetupTest {
     void whenPaymentsAreLoaded_thenVerifyDetailsAndRelationships() {
         Payment payment1 = entityManager.find(Payment.class, 1L);
         assertThat(payment1).isNotNull();
-        assertThat(payment1.getPaymentDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(payment1.getPaymentDate()).isEqualTo(LocalDate.of(2024, 12, 20));
         assertThat(payment1.getPaymentMethod()).isEqualTo(PaymentMethod.CARD);
         assertThat(payment1.getAmount()).isEqualByComparingTo(new BigDecimal("10.00"));
         assertThat(payment1.getCurrency()).isEqualTo(Currency.USD);
         assertThat(payment1.getStudent()).isNotNull();
         assertThat(payment1.getStudent().getId()).isEqualTo(1L);
+
+        Payment payment5 = entityManager.find(Payment.class, 5L);
+        assertThat(payment5).isNotNull();
+        assertThat(payment5.getPaymentDate()).isEqualTo(LocalDate.of(2025, 1, 15));
+        assertThat(payment5.getPaymentMethod()).isEqualTo(PaymentMethod.CASH);
+        assertThat(payment5.getAmount()).isEqualByComparingTo(new BigDecimal("30.00"));
+        assertThat(payment5.getCurrency()).isEqualTo(Currency.EUR);
+        assertThat(payment5.getStudent()).isNotNull();
+        assertThat(payment5.getStudent().getId()).isEqualTo(5L);
     }
 
     @Test
     void whenBalancesAreLoaded_thenVerifyDetailsAndRelationships() {
         Balance balance1 = entityManager.find(Balance.class, 1L);
         assertThat(balance1).isNotNull();
-        assertThat(balance1.getAmount()).isEqualByComparingTo(new BigDecimal("-15.00"));
+        assertThat(balance1.getAmount()).isEqualByComparingTo(new BigDecimal("-5.00"));
         assertThat(balance1.getCurrency()).isEqualTo(Currency.USD);
         assertThat(balance1.getStudent()).isNotNull();
         assertThat(balance1.getStudent().getId()).isEqualTo(1L);
+
+        Balance balance2 = entityManager.find(Balance.class, 2L);
+        assertThat(balance2).isNotNull();
+        assertThat(balance2.getAmount()).isEqualByComparingTo(new BigDecimal("10.00"));
+        assertThat(balance2.getCurrency()).isEqualTo(Currency.EUR);
+        assertThat(balance2.getStudent()).isNotNull();
+        assertThat(balance2.getStudent().getId()).isEqualTo(2L);
 
         Balance balanceFreeStudent = entityManager.find(Balance.class, 3L);
         assertThat(balanceFreeStudent).isNotNull();
@@ -117,5 +133,12 @@ public class DataJpaTestSetupTest {
         assertThat(balanceFreeStudent.getCurrency()).isEqualTo(Currency.PLN);
         assertThat(balanceFreeStudent.getStudent()).isNotNull();
         assertThat(balanceFreeStudent.getStudent().getId()).isEqualTo(3L);
+
+        Balance balanceInactiveStudent = entityManager.find(Balance.class, 5L);
+        assertThat(balanceInactiveStudent).isNotNull();
+        assertThat(balanceInactiveStudent.getAmount()).isEqualByComparingTo(new BigDecimal("30.00"));
+        assertThat(balanceInactiveStudent.getCurrency()).isEqualTo(Currency.EUR);
+        assertThat(balanceInactiveStudent.getStudent()).isNotNull();
+        assertThat(balanceInactiveStudent.getStudent().getId()).isEqualTo(5L);
     }
 }

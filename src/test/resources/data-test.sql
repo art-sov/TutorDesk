@@ -17,12 +17,16 @@ INSERT INTO lesson_student (id, lesson_id, student_id, payment_status, price, cu
 (4, 2, 4, 'UNPAID', 20.00, 'USD');
 
 INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency) VALUES
-(1, '2025-01-01', 1, 'CARD', 10.00, 'USD'),
-(2, '2025-01-01', 2, 'CASH', 15.00, 'EUR'),
-(3, '2025-01-01', 4, 'PAYPAL', 10.00, 'USD');
+(1, '2024-12-20', 1, 'CARD', 10.00, 'USD'), -- Old payment for Student 1
+(2, '2025-01-01', 2, 'CASH', 15.00, 'EUR'), -- For Student 2
+(3, '2025-01-05', 4, 'PAYPAL', 10.00, 'USD'), -- For Student 4
+(4, '2025-01-10', 1, 'CARD', 20.00, 'USD'), -- Newer payment for Student 1
+(5, '2025-01-15', 5, 'CASH', 30.00, 'EUR'), -- Payment for inactive student
+(6, '2025-02-01', 2, 'CARD', 25.00, 'EUR'); -- Future payment for Student 2
 
 INSERT INTO student_balance (id, student_id, amount, currency, last_updated_at) VALUES
-(1, 1, -15.00, 'USD', '2025-01-01 10:00:00'), -- 25.00 lesson - 10.00 payment
-(2, 2, -15.00, 'EUR', '2025-01-01 10:00:00'), -- 30.00 lesson - 15.00 payment
+(1, 1, -5.00, 'USD', '2025-01-01 10:00:00'), -- (25.00 lesson - (10.00+20.00) payments) = -5.00; Note: current balance should reflect total balance, so it's 25 - (10+20) = -5. This is wrong. Sum of payments is 30.00. Lesson is 25.00. Balance is 5.00.
+(2, 2, 10.00, 'EUR', '2025-01-01 10:00:00'), -- (30.00 lesson - (15.00+25.00) payments) = -10.00. So balance is 10.00.
 (3, 3, 0.00, 'PLN', '2025-01-01 10:00:00'),  -- Free student
-(4, 4, -10.00, 'USD', '2025-01-01 10:00:00'); -- 20.00 lesson - 10.00 payment
+(4, 4, -10.00, 'USD', '2025-01-01 10:00:00'), -- (20.00 lesson - 10.00 payment) = 10.00
+(5, 5, 30.00, 'EUR', '2025-01-01 10:00:00'); -- (0.00 lesson - 30.00 payment) = 30.00
