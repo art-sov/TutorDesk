@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,9 +33,16 @@ public class LessonViewController {
     private final StudentService studentService;
 
     @GetMapping("/list")
-    public String listLessons(Model model) {
-        List<LessonListDTO> lessons = lessonService.getAllLessonsSorted();
+    public String listLessons(@RequestParam(value = "startDate", required = false) LocalDate startDate,
+                              @RequestParam(value = "endDate", required = false) LocalDate endDate,
+                              Model model) {
+        LocalDate start = (startDate != null) ? startDate : LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+        LocalDate end = (endDate != null) ? endDate : LocalDate.now().with(TemporalAdjusters.lastDayOfMonth());
+
+        List<LessonListDTO> lessons = lessonService.getLessonsByDateRange(start, end);
         model.addAttribute("lessons", lessons);
+        model.addAttribute("startDate", start);
+        model.addAttribute("endDate", end);
         return "lesson/list-lessons";
     }
 
@@ -62,6 +71,7 @@ public class LessonViewController {
         redirectAttributes.addFlashAttribute("message", "Lesson created successfully!");
         return "redirect:/lessons/list";
     }
+
 
     @GetMapping("/profile/{id}")
     public String showLessonProfile(@PathVariable Long id, Model model) {

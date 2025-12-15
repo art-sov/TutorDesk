@@ -9,7 +9,21 @@
 <body class="list-lessons-page">
 <div class="container list-lessons-page">
     <h1>Lesson List</h1>
-    <a href="/lessons/new" class="btn btn-primary btn-add">Add New Lesson</a>
+
+    <a href="/lessons/new" class="btn btn-primary btn-add mb-3">Add New Lesson</a>
+
+    <form th:action="@{/lessons/list}" method="get" class="mb-3 d-flex align-items-center">
+        <div class="me-2">
+            <label for="startDate" class="form-label visually-hidden">Start Date</label>
+            <input type="date" id="startDate" name="startDate" th:value="${#temporals.format(startDate, 'yyyy-MM-dd')}" class="form-control">
+        </div>
+        <div class="me-2">
+            <label for="endDate" class="form-label visually-hidden">End Date</label>
+            <input type="date" id="endDate" name="endDate" th:value="${#temporals.format(endDate, 'yyyy-MM-dd')}" class="form-control">
+        </div>
+        <button type="submit" class="btn btn-info">Filter</button>
+    </form>
+
     <div class="table-responsive">
         <table>
             <thead>

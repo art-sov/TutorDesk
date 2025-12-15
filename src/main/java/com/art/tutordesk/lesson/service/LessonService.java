@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +32,8 @@ public class LessonService {
     private final BalanceService balanceService;
     private final LessonMapper lessonMapper;
 
-    public List<LessonListDTO> getAllLessonsSorted() {
-        List<Lesson> lessons = lessonRepository.findAllWithStudentsSorted();
+    public List<LessonListDTO> getLessonsByDateRange(LocalDate startDate, LocalDate endDate) {
+        List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
         return lessons.stream()
                 .map(lessonMapper::toLessonListDTO)
                 .collect(Collectors.toList());

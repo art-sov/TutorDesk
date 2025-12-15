@@ -76,20 +76,25 @@ class LessonServiceTest {
         lesson1.setLessonStudents(new HashSet<>());
     }
 
-    // Test cases for getAllLessonsSorted
+    // Test cases for getLessonsByDateRange
     @Test
-    void getAllLessonsSorted_shouldReturnEmptyList_whenNoLessonsExist() {
-        when(lessonRepository.findAllWithStudentsSorted()).thenReturn(Collections.emptyList());
+    void getLessonsByDateRange_shouldReturnEmptyList_whenNoLessonsExist() {
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now().plusDays(1);
+        when(lessonRepository.findByLessonDateBetween(startDate, endDate)).thenReturn(Collections.emptyList());
 
-        List<LessonListDTO> result = lessonService.getAllLessonsSorted();
+        List<LessonListDTO> result = lessonService.getLessonsByDateRange(startDate, endDate);
 
         assertTrue(result.isEmpty());
-        verify(lessonRepository, times(1)).findAllWithStudentsSorted();
+        verify(lessonRepository, times(1)).findByLessonDateBetween(startDate, endDate);
         verify(lessonMapper, never()).toLessonListDTO(any(Lesson.class));
     }
 
     @Test
-    void getAllLessonsSorted_shouldReturnLessonsWithCalculatedStatus_whenLessonsExist() {
+    void getLessonsByDateRange_shouldReturnLessons_whenLessonsExist() {
+        LocalDate startDate = LocalDate.now();
+        LocalDate endDate = LocalDate.now().plusDays(1);
+
         Lesson lesson2 = new Lesson();
         lesson2.setId(2L);
         lesson2.setLessonDate(LocalDate.now().plusDays(1));
@@ -98,26 +103,22 @@ class LessonServiceTest {
         lesson2.setLessonStudents(new HashSet<>());
 
         List<Lesson> lessons = Arrays.asList(lesson1, lesson2);
-        when(lessonRepository.findAllWithStudentsSorted()).thenReturn(lessons);
+        when(lessonRepository.findByLessonDateBetween(startDate, endDate)).thenReturn(lessons);
 
         // Mock mapper behavior
         LessonListDTO dto1 = new LessonListDTO();
         dto1.setId(lesson1.getId());
-        dto1.setPaymentStatus(PaymentStatus.PAID);
         LessonListDTO dto2 = new LessonListDTO();
         dto2.setId(lesson2.getId());
-        dto2.setPaymentStatus(PaymentStatus.UNPAID);
 
         when(lessonMapper.toLessonListDTO(lesson1)).thenReturn(dto1);
         when(lessonMapper.toLessonListDTO(lesson2)).thenReturn(dto2);
 
-        List<LessonListDTO> result = lessonService.getAllLessonsSorted();
+        List<LessonListDTO> result = lessonService.getLessonsByDateRange(startDate, endDate);
 
         assertEquals(2, result.size());
-        assertEquals(PaymentStatus.PAID, result.get(0).getPaymentStatus());
-        assertEquals(PaymentStatus.UNPAID, result.get(1).getPaymentStatus());
 
-        verify(lessonRepository, times(1)).findAllWithStudentsSorted();
+        verify(lessonRepository, times(1)).findByLessonDateBetween(startDate, endDate);
         verify(lessonMapper, times(1)).toLessonListDTO(lesson1);
         verify(lessonMapper, times(1)).toLessonListDTO(lesson2);
     }
