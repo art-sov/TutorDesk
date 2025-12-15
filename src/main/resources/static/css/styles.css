@@ -275,7 +275,7 @@ body.list-payments-page {
 
 /* Student Active/Inactive Status Styles */
 .inactive-student-row {
-    background: rgba(100, 100, 100, 0.3); /* Darker gray background for inactive */
+    background: rgba(177, 177, 177, 0.3); /* Gray background for inactive */
     color: #ccc; /* Dimmer text */
     /* text-decoration: line-through; */ /* Strikethrough can be added here if desired */
 }

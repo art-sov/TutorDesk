@@ -11,10 +11,10 @@
     <div class="card">
         <div class="card-body">
             <h1 class="card-title">Payment Details</h1>
-            <p class="card-text"><strong>Payment Date:</strong> <span th:text="${payment.paymentDate}"></span></p>
+            <p class="card-text"><strong>Date:</strong> <span th:text="${payment.paymentDate}"></span></p>
             <p class="card-text"><strong>Student:</strong> <span th:text="${payment.student.firstName + ' ' + payment.student.lastName}"></span></p>
             <p class="card-text"><strong>Amount:</strong> <span th:text="${payment.currency.symbol + ' ' + #numbers.formatDecimal(payment.amount, 1, 2)}"></span></p>
-            <p class="card-text"><strong>Payment Method:</strong> <span th:text="${payment.paymentMethod}"></span></p>
+            <p class="card-text"><strong>Method:</strong> <span th:text="${payment.paymentMethod}"></span></p>
             <a th:href="@{/payments/edit/{id}(id=${payment.id})}" class="btn btn-primary btn-profile-action">Edit Payment</a>
             <form th:action="@{/payments/delete/{id}(id=${payment.id})}" method="post" style="display:inline;">
                 <button type="submit" class="btn btn-primary btn-profile-action"
