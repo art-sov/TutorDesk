@@ -8,13 +8,17 @@ INSERT INTO students (id, first_name, last_name, knowledge_level, country, price
 
 INSERT INTO lessons (id, lesson_date, start_time, topic) VALUES
 (1, '2025-01-01', '10:00:00', 'Group Lesson A'),
-(2, '2025-01-02', '11:00:00', 'Group Lesson B');
+(2, '2025-01-02', '11:00:00', 'Group Lesson B'),
+(3, '2025-01-10', '12:00:00', 'Individual Lesson 1'),
+(4, '2025-01-05', '14:00:00', 'Individual Lesson 2');
 
 INSERT INTO lesson_student (id, lesson_id, student_id, payment_status, price, currency) VALUES
-(1, 1, 1, 'UNPAID', 25.00, 'USD'),
-(2, 1, 2, 'UNPAID', 30.00, 'EUR'),
-(3, 2, 3, 'FREE', 0.00, 'PLN'),
-(4, 2, 4, 'UNPAID', 20.00, 'USD');
+(1, 1, 1, 'UNPAID', 25.00, 'USD'),   -- Student 1
+(2, 1, 2, 'UNPAID', 30.00, 'EUR'),   -- Student 2
+(3, 2, 3, 'FREE', 0.00, 'PLN'),     -- Student 3
+(4, 2, 4, 'UNPAID', 20.00, 'USD'),   -- Student 4
+(5, 3, 1, 'PAID', 25.00, 'USD'),     -- Student 1, future lesson, PAID
+(6, 4, 1, 'UNPAID', 30.00, 'EUR');    -- Student 1, past lesson, different currency
 
 INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency) VALUES
 (1, '2024-12-20', 1, 'CARD', 10.00, 'USD'), -- Old payment for Student 1
