@@ -13,9 +13,6 @@ import java.util.List;
 @Repository
 public interface LessonRepository extends JpaRepository<Lesson, Long> {
 
-    @Query("SELECT l FROM Lesson l LEFT JOIN FETCH l.lessonStudents ls LEFT JOIN FETCH ls.student ORDER BY l.lessonDate, l.startTime")
-    List<Lesson> findAllWithStudentsSorted();
-
     long countByLessonDateGreaterThanEqual(LocalDate startDate);
 
     @Query("SELECT l FROM Lesson l LEFT JOIN FETCH l.lessonStudents ls LEFT JOIN FETCH ls.student WHERE l.lessonDate BETWEEN :startDate AND :endDate ORDER BY l.lessonDate ASC, l.startTime ASC")
