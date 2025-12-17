@@ -29,7 +29,6 @@
 
         <div class="mb-3">
             <label for="students" class="form-label">Select Students</label>
-<!--            todo use Select2 for multiply choice-->
             <select multiple class="form-control" th:classappend="${#fields.hasGlobalErrors() ? 'is-invalid' : ''}" id="students" name="selectedStudentIds" size="5">
                 <option th:each="student : ${allStudents}"
                         th:value="${student.id}"
