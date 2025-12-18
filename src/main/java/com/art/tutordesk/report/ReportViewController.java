@@ -16,7 +16,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/reports")
 @RequiredArgsConstructor
-public class ReportController {
+public class ReportViewController {
 
     private final StudentService studentService;
     private final ReportService reportService;
