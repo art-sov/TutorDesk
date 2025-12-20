@@ -2,8 +2,8 @@ package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,6 @@ class LessonStudentServiceTest {
 
     @Mock
     private LessonStudentRepository lessonStudentRepository;
-
     @InjectMocks
     private LessonStudentService lessonStudentService;
 
@@ -39,13 +38,17 @@ class LessonStudentServiceTest {
 
     @BeforeEach
     void setUp() {
-        student = createStudent(1L, "John", "Doe", Currency.USD, new BigDecimal("25.00"), new BigDecimal("20.00"));
-        lesson = createLesson(1L, LocalDate.now(), LocalTime.now(), "Math");
+        student = createStudent();
+        lesson = createLesson();
     }
 
     @Test
     void save_shouldSaveLessonStudent() {
         LessonStudent lessonStudent = new LessonStudent();
+        lessonStudent.setLesson(lesson);
+        lessonStudent.setId(1L);
+        lessonStudent.setStudent(student);
+
         when(lessonStudentRepository.save(any(LessonStudent.class))).thenReturn(lessonStudent);
 
         LessonStudent result = lessonStudentService.save(lessonStudent);
@@ -68,23 +71,23 @@ class LessonStudentServiceTest {
         assertNull(result.getPrice()); // Price should not be set by this service
     }
 
-    private Student createStudent(Long id, String firstName, String lastName, Currency currency, BigDecimal priceIndividual, BigDecimal priceGroup) {
+    private Student createStudent() {
         Student student1 = new Student();
-        student1.setId(id);
-        student1.setFirstName(firstName);
-        student1.setLastName(lastName);
-        student1.setCurrency(currency);
-        student1.setPriceIndividual(priceIndividual);
-        student1.setPriceGroup(priceGroup);
+        student1.setId(1L);
+        student1.setFirstName("John");
+        student1.setLastName("Doe");
+        student1.setCurrency(Currency.USD);
+        student1.setPriceIndividual(new BigDecimal("25.00"));
+        student1.setPriceGroup(new BigDecimal("20.00"));
         return student1;
     }
 
-    private Lesson createLesson(Long id, LocalDate date, LocalTime time, String topic) {
+    private Lesson createLesson() {
         Lesson lesson = new Lesson();
-        lesson.setId(id);
-        lesson.setLessonDate(date);
-        lesson.setStartTime(time);
-        lesson.setTopic(topic);
+        lesson.setId(1L);
+        lesson.setLessonDate(LocalDate.now());
+        lesson.setStartTime(LocalTime.now());
+        lesson.setTopic("Math");
         return lesson;
     }
 }

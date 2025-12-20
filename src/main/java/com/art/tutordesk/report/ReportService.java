@@ -8,6 +8,7 @@ import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ReportService {
 
     private final LessonRepository lessonRepository;
@@ -29,29 +31,38 @@ public class ReportService {
 
     public long getLessonsThisMonthCount() {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
-        return lessonRepository.countByLessonDateGreaterThanEqual(startOfMonth);
+        long count = lessonRepository.countByLessonDateGreaterThanEqual(startOfMonth);
+        log.debug("Lessons this month count (from {}): {}", startOfMonth, count);
+        return count;
     }
 
     public long getActiveStudentsCount() {
-        return studentRepository.countByActiveTrue();
+        long count = studentRepository.countByActiveTrue();
+        log.debug("Active students count: {}", count);
+        return count;
     }
 
     public Map<Currency, BigDecimal> getTotalPaymentsThisMonth() {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
         List<Payment> payments = paymentRepository.findByPaymentDateGreaterThanEqual(startOfMonth);
 
-        return payments.stream()
+        Map<Currency, BigDecimal> totalPayments = payments.stream()
                 .collect(Collectors.groupingBy(
                         Payment::getCurrency,
                         Collectors.mapping(Payment::getAmount, Collectors.reducing(BigDecimal.ZERO, BigDecimal::add))
                 ));
+        log.debug("Total payments this month (from {}): {}", startOfMonth, totalPayments);
+        return totalPayments;
     }
 
     public List<ReportItemDto> generateReport(LocalDate startDate, LocalDate endDate, List<Long> studentIds, boolean includeLessons, boolean includePayments) {
+        log.info("Generating report from {} to {} for students {}. Include lessons: {}, include payments: {}",
+                startDate, endDate, studentIds, includeLessons, includePayments);
         List<ReportItemDto> reportItems = new ArrayList<>();
 
         if (includeLessons) {
             List<LessonStudent> lessons = lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
+            log.debug("Found {} lessons for report criteria.", lessons.size());
             lessons.stream()
                     .map(ls -> ReportItemDto.builder()
                             .studentName(ls.getStudent().getFirstName() + " " + ls.getStudent().getLastName())
@@ -65,6 +76,7 @@ public class ReportService {
 
         if (includePayments) {
             List<Payment> payments = paymentRepository.findByFilters(startDate, endDate, studentIds);
+            log.debug("Found {} payments for report criteria.", payments.size());
             payments.stream()
                     .map(p -> ReportItemDto.builder()
                             .studentName(p.getStudent().getFirstName() + " " + p.getStudent().getLastName())
@@ -77,6 +89,7 @@ public class ReportService {
         }
 
         reportItems.sort(Comparator.comparing(ReportItemDto::getDate));
+        log.info("Report generated with {} items.", reportItems.size());
         return reportItems;
     }
 }

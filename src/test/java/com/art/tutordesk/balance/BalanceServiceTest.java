@@ -1,5 +1,6 @@
 package com.art.tutordesk.balance;
 
+import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
@@ -73,12 +74,16 @@ public class BalanceServiceTest {
         eurBalance.setCurrency(Currency.EUR);
         eurBalance.setAmount(new BigDecimal("50.00"));
 
+        Lesson mockLesson = new Lesson();
+        mockLesson.setId(100L);
+
         lessonStudentPaid = new LessonStudent();
         lessonStudentPaid.setId(1L);
         lessonStudentPaid.setStudent(student);
         lessonStudentPaid.setPrice(new BigDecimal("50.00"));
         lessonStudentPaid.setCurrency(Currency.USD);
         lessonStudentPaid.setPaymentStatus(PaymentStatus.UNPAID);
+        lessonStudentPaid.setLesson(mockLesson);
 
         lessonStudentUnpaid = new LessonStudent();
         lessonStudentUnpaid.setId(2L);
@@ -86,6 +91,7 @@ public class BalanceServiceTest {
         lessonStudentUnpaid.setPrice(new BigDecimal("70.00"));
         lessonStudentUnpaid.setCurrency(Currency.USD);
         lessonStudentUnpaid.setPaymentStatus(PaymentStatus.UNPAID);
+        lessonStudentUnpaid.setLesson(mockLesson);
     }
 
     @Test

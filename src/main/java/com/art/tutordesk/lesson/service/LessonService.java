@@ -11,6 +11,7 @@ import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LessonService {
 
     private final LessonRepository lessonRepository;
@@ -34,6 +36,7 @@ public class LessonService {
 
     public List<LessonListDTO> getLessonsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+        log.debug("Found {} lessons between {} and {}", lessons.size(), startDate, endDate);
         return lessons.stream()
                 .map(lessonMapper::toLessonListDTO)
                 .collect(Collectors.toList());
@@ -41,13 +44,19 @@ public class LessonService {
 
     public LessonProfileDTO getLessonById(Long id) {
         Lesson lesson = lessonRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
+                .orElseThrow(() -> {
+                    log.warn("Lesson not found with id: {}", id);
+                    return new RuntimeException("Lesson not found with id: " + id);
+                });
         return lessonMapper.toLessonProfileDTO(lesson);
     }
 
     @Transactional
     public Lesson saveLesson(Lesson lesson, List<Long> selectedStudentIds) {
         Lesson savedLesson = lessonRepository.save(lesson);
+        log.info("Lesson created: {id={}, date={}, startTime={}, topic={}} with {} students.",
+                savedLesson.getId(), savedLesson.getLessonDate(), savedLesson.getStartTime(),
+                savedLesson.getTopic(), selectedStudentIds != null ? selectedStudentIds.size() : 0);
         List<Student> students = associateStudentsWithLesson(savedLesson, selectedStudentIds, Map.of());
         students.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
         return savedLesson;
@@ -56,7 +65,14 @@ public class LessonService {
     @Transactional
     public Lesson updateLesson(Lesson lesson, List<Long> newStudentIds) {
         Lesson existingLesson = lessonRepository.findById(lesson.getId())
-                .orElseThrow(() -> new RuntimeException("Lesson not found for update with id: " + lesson.getId()));
+                .orElseThrow(() -> {
+                    log.warn("Lesson not found for update with id: {}", lesson.getId());
+                    return new RuntimeException("Lesson not found for update with id: " + lesson.getId());
+                });
+
+        log.info("Updating lesson {}: from date={} topic='{}' to date={} topic='{}'",
+                lesson.getId(), existingLesson.getLessonDate(), existingLesson.getTopic(),
+                lesson.getLessonDate(), lesson.getTopic());
 
         Set<Student> allAffectedStudents = new HashSet<>();
         existingLesson.getLessonStudents().forEach(ls -> allAffectedStudents.add(ls.getStudent()));
@@ -81,6 +97,9 @@ public class LessonService {
 
         List<Student> newStudents = associateStudentsWithLesson(existingLesson, newStudentIds, existingStudentPaymentStatuses);
         allAffectedStudents.addAll(newStudents);
+        log.info("Lesson {} updated with {} students. Affected student IDs: {}",
+                lesson.getId(), newStudentIds != null ? newStudentIds.size() : 0,
+                allAffectedStudents.stream().map(Student::getId).collect(Collectors.toList()));
 
         // Resync status for all affected students (both old and new)
         allAffectedStudents.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
@@ -90,6 +109,7 @@ public class LessonService {
 
     private List<Student> associateStudentsWithLesson(Lesson lesson, List<Long> studentIds, Map<Long, PaymentStatus> existingStatuses) {
         if (CollectionUtils.isEmpty(studentIds)) {
+            log.debug("No students selected for lesson {}. No associations to create.", lesson.getId());
             return List.of();
         }
 
@@ -114,13 +134,21 @@ public class LessonService {
             lesson.getLessonStudents().add(savedLessonStudent);
             // Debit the balance for the new lesson association using changeBalance
             balanceService.changeBalance(student.getId(), savedLessonStudent.getCurrency(), savedLessonStudent.getPrice().negate());
+            log.debug("Associated student {} with lesson {} at price {} {}. Initial status: {}.",
+                    student.getId(), lesson.getId(), savedLessonStudent.getPrice(),
+                    savedLessonStudent.getCurrency(), savedLessonStudent.getPaymentStatus());
         }
         return selectedStudents;
     }
 
     @Transactional
     public void deleteLesson(Long id) {
-        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new RuntimeException("Lesson not found for deletion with id: " + id));
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> {
+            log.warn("Lesson not found for deletion with id: {}", id);
+            return new RuntimeException("Lesson not found for deletion with id: " + id);
+        });
+        log.info("Deleting lesson: {id={}, date={}, startTime={}, topic='{}'}",
+                lesson.getId(), lesson.getLessonDate(), lesson.getStartTime(), lesson.getTopic());
 
         Set<Student> affectedStudents = lesson.getLessonStudents().stream()
                 .map(LessonStudent::getStudent)
@@ -131,8 +159,10 @@ public class LessonService {
                 balanceService.changeBalance(ls.getStudent().getId(), ls.getCurrency(), ls.getPrice()));
 
         lessonRepository.deleteById(id);
+        log.info("Lesson with ID {} deleted.", id);
 
         // After deletion, resync the status for all affected students
         affectedStudents.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
     }
 }
+

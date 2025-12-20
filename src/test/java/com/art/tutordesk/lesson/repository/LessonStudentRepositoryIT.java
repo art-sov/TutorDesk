@@ -78,8 +78,8 @@ public class LessonStudentRepositoryIT {
 
         assertThat(result).hasSize(2);
         // Records for student 1 in USD are from 2025-01-01 (UNPAID) and 2025-01-10 (PAID)
-        assertThat(result.get(0).getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 1));
-        assertThat(result.get(0).getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
+        assertThat(result.getFirst().getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 1));
+        assertThat(result.getFirst().getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
         assertThat(result.get(1).getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 10));
         assertThat(result.get(1).getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
     }

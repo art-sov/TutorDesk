@@ -45,7 +45,7 @@ public class LessonRepositoryIT {
 
         assertThat(lessons).isNotNull();
         assertThat(lessons).hasSize(2);
-        assertThat(lessons.get(0).getId()).isEqualTo(1L);
+        assertThat(lessons.getFirst().getId()).isEqualTo(1L);
         assertThat(lessons.get(1).getId()).isEqualTo(2L);
     }
 
