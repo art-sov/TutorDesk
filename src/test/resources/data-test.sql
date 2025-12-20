@@ -20,13 +20,13 @@ INSERT INTO lesson_student (id, lesson_id, student_id, payment_status, price, cu
 (5, 3, 1, 'PAID', 25.00, 'USD'),     -- Student 1, future lesson, PAID
 (6, 4, 1, 'UNPAID', 30.00, 'EUR');    -- Student 1, past lesson, different currency
 
-INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency) VALUES
-(1, '2024-12-20', 1, 'CARD', 10.00, 'USD'), -- Old payment for Student 1
-(2, '2025-01-01', 2, 'CASH', 15.00, 'EUR'), -- For Student 2
-(3, '2025-01-05', 4, 'PAYPAL', 10.00, 'USD'), -- For Student 4
-(4, '2025-01-10', 1, 'CARD', 20.00, 'USD'), -- Newer payment for Student 1
-(5, '2025-01-15', 5, 'CASH', 30.00, 'EUR'), -- Payment for inactive student
-(6, '2025-02-01', 2, 'CARD', 25.00, 'EUR'); -- Future payment for Student 2
+INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency, created_at, updated_at) VALUES
+(1, '2024-12-20', 1, 'CARD', 10.00, 'USD', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Old payment for Student 1
+(2, '2025-01-01', 2, 'CASH', 15.00, 'EUR', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- For Student 2
+(3, '2025-01-05', 4, 'PAYPAL', 10.00, 'USD', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- For Student 4
+(4, '2025-01-10', 1, 'CARD', 20.00, 'USD', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Newer payment for Student 1
+(5, '2025-01-15', 5, 'CASH', 30.00, 'EUR', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Payment for inactive student
+(6, '2025-02-01', 2, 'CARD', 25.00, 'EUR', '2025-01-01 10:00:00', '2025-01-01 10:00:00'); -- Future payment for Student 2
 
 INSERT INTO student_balance (id, student_id, amount, currency, last_updated_at) VALUES
 (1, 1, -5.00, 'USD', '2025-01-01 10:00:00'),
@@ -34,4 +34,4 @@ INSERT INTO student_balance (id, student_id, amount, currency, last_updated_at) 
 (3, 3, 0.00, 'PLN', '2025-01-01 10:00:00'),
 (4, 4, -10.00, 'USD', '2025-01-01 10:00:00'),
 (5, 5, 30.00, 'EUR', '2025-01-01 10:00:00'),
-(6, 1, -30.00, 'EUR', '2025-01-01 10:00:00'); -- Student 1 also has a EUR balance
+(6, 1, -3.00, 'EUR', '2025-01-01 10:00:00'); -- Student 1 also has a EUR balance

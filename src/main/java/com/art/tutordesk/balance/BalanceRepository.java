@@ -18,7 +18,7 @@ public interface BalanceRepository extends JpaRepository<Balance, Long> {
 
     List<Balance> findByStudentId(Long studentId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM Balance b WHERE b.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
 

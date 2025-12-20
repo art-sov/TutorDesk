@@ -25,7 +25,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                                 @Param("endDate") LocalDate endDate,
                                 @Param("studentIds") List<Long> studentIds);
 
-    @Modifying
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM Payment p WHERE p.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
 

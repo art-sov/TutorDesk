@@ -16,8 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,24 +35,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Sql("/sql/cleanup.sql")
+@Transactional
 public class StudentLessonFlowIT {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private StudentRepository studentRepository;
-
     @Autowired
     private BalanceRepository balanceRepository;
-
     @Autowired
     private LessonStudentRepository lessonStudentRepository;
-
     @Autowired
     private LessonService lessonService;
-
     @Autowired
     private PaymentRepository paymentRepository;
 
@@ -71,7 +66,7 @@ public class StudentLessonFlowIT {
         // 2. Verify the student is in the database
         List<Student> students = studentRepository.findAll();
         assertThat(students).hasSize(1);
-        Student student = students.get(0);
+        Student student = students.getFirst();
         assertThat(student.getFirstName()).isEqualTo("John");
         assertThat(student.getPriceIndividual()).isEqualByComparingTo("50.00");
 
@@ -86,7 +81,7 @@ public class StudentLessonFlowIT {
         // 4. Verify LessonStudent is created and has correct status
         List<LessonStudent> lessonStudents = lessonStudentRepository.findAll();
         assertThat(lessonStudents).hasSize(1);
-        LessonStudent lessonStudent = lessonStudents.get(0);
+        LessonStudent lessonStudent = lessonStudents.getFirst();
         assertThat(lessonStudent.getStudent().getId()).isEqualTo(student.getId());
         assertThat(lessonStudent.getLesson().getLessonDate()).isEqualTo("2025-12-20");
         assertThat(lessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
@@ -191,7 +186,7 @@ public class StudentLessonFlowIT {
         // 3. Verify initial state: both are charged the group price
         List<LessonStudent> createdLessonStudents = lessonStudentRepository.findAll();
         assertThat(createdLessonStudents).hasSize(2);
-        Lesson savedLesson = createdLessonStudents.get(0).getLesson();
+        Lesson savedLesson = createdLessonStudents.getFirst().getLesson();
 
         Balance balanceA_initial = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
         assertThat(balanceA_initial.getAmount()).isEqualByComparingTo("-40.00");
@@ -218,7 +213,7 @@ public class StudentLessonFlowIT {
         // Verify the price on the LessonStudent record for Student A was also updated
         List<LessonStudent> finalLessonStudents = lessonStudentRepository.findAll();
         assertThat(finalLessonStudents).hasSize(1);
-        LessonStudent finalLessonStudentA = finalLessonStudents.get(0);
+        LessonStudent finalLessonStudentA = finalLessonStudents.getFirst();
         assertThat(finalLessonStudentA.getStudent().getId()).isEqualTo(studentA.getId());
         assertThat(finalLessonStudentA.getPrice()).isEqualByComparingTo("60.00");
     }
@@ -240,7 +235,7 @@ public class StudentLessonFlowIT {
         lesson.setLessonDate(LocalDate.of(2025, 10, 10));
         lesson.setStartTime(LocalTime.of(15, 0));
         Lesson savedLesson = lessonService.saveLesson(lesson, List.of(student.getId()));
-        LessonStudent lessonStudent = lessonStudentRepository.findAll().get(0);
+        LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
 
         // 3. Make a payment for the lesson
         mockMvc.perform(post("/payments/create")
@@ -256,7 +251,7 @@ public class StudentLessonFlowIT {
         assertThat(paidLessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
         Balance balanceAfterPayment = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
         assertThat(balanceAfterPayment.getAmount()).isEqualByComparingTo("0.00");
-        long paymentId = paymentRepository.findAll().get(0).getId();
+        long paymentId = paymentRepository.findAll().getFirst().getId();
 
         // --- Action 1: Delete the Payment ---
         mockMvc.perform(post("/payments/delete/{id}", paymentId))
@@ -295,8 +290,8 @@ public class StudentLessonFlowIT {
                         .param("priceGroup", "80.00")
                         .param("currency", "USD"))
                 .andExpect(status().is3xxRedirection());
-        
-        Student student = studentRepository.findAll().get(0);
+
+        Student student = studentRepository.findAll().getFirst();
         Long studentId = student.getId();
 
         // 2. Add a lesson for the student
@@ -305,7 +300,7 @@ public class StudentLessonFlowIT {
                         .param("startTime", "10:00")
                         .param("selectedStudentIds", studentId.toString()))
                 .andExpect(status().is3xxRedirection());
-        
+
         // 3. Make a payment for the student
         mockMvc.perform(post("/payments/create")
                         .param("student.id", studentId.toString())
@@ -316,7 +311,7 @@ public class StudentLessonFlowIT {
                 .andExpect(status().is3xxRedirection());
 
         // 4. Verify the lesson is paid
-        LessonStudent lessonStudent = lessonStudentRepository.findAll().get(0);
+        LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
         assertThat(lessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
         Balance balance = balanceRepository.findByStudentIdAndCurrency(studentId, Currency.USD).orElseThrow();
         assertThat(balance.getAmount()).isEqualByComparingTo("0.00");
