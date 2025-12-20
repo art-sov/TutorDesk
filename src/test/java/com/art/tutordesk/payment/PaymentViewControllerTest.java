@@ -36,10 +36,9 @@ class PaymentViewControllerTest {
 
     @Test
     void listPayments() throws Exception {
-        Student student = createStudent();
-        Payment payment = createPayment(student);
+        PaymentDto paymentDto = createPaymentDto(1L);
 
-        when(paymentService.getAllPayments()).thenReturn(Collections.singletonList(payment));
+        when(paymentService.getAllPayments()).thenReturn(Collections.singletonList(paymentDto));
 
         mockMvc.perform(get("/payments/list"))
                 .andExpect(status().isOk())
@@ -49,10 +48,9 @@ class PaymentViewControllerTest {
 
     @Test
     void viewPaymentProfile() throws Exception {
-        Student student = createStudent();
-        Payment payment = createPayment(student);
+        PaymentDto paymentDto = createPaymentDto(1L);
 
-        when(paymentService.getPaymentById(1L)).thenReturn(payment);
+        when(paymentService.getPaymentById(1L)).thenReturn(paymentDto);
 
         mockMvc.perform(get("/payments/profile/1"))
                 .andExpect(status().isOk())
@@ -76,16 +74,17 @@ class PaymentViewControllerTest {
     @Test
     void createPayment_whenValid() throws Exception {
         Student student = createStudent();
+        PaymentDto paymentDto = createPaymentDto(null);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
-        when(paymentService.createPayment(any(Payment.class))).thenReturn(new Payment());
+        when(paymentService.createPayment(any(PaymentDto.class))).thenReturn(paymentDto);
 
         mockMvc.perform(post("/payments/create")
                         .param("amount", "100")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-12-17")
                         .param("paymentMethod", "CASH")
-                        .param("student.id", "1"))
+                        .param("studentId", "1"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/list"));
     }
@@ -101,7 +100,7 @@ class PaymentViewControllerTest {
                         .param("paymentMethod", "CASH"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/add-payment"))
-                .andExpect(model().attributeHasFieldErrors("payment", "student"));
+                .andExpect(model().attributeHasFieldErrors("payment", "studentId"));
     }
 
     @Test
@@ -109,24 +108,20 @@ class PaymentViewControllerTest {
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/payments/create")
-                        .param("amount", "-100") // Invalid amount
-                        .param("student.id", "1"))
+                        .param("amount", "-100")
+                        .param("studentId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/add-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "amount"));
     }
 
-
     @Test
     void editPaymentForm() throws Exception {
-        Payment payment = new Payment();
-        payment.setId(1L);
-        Student student = new Student();
-        student.setId(1L);
-        payment.setStudent(student);
+        PaymentDto paymentDto = createPaymentDto(1L);
+        paymentDto.setStudentId(1L);
 
-        when(paymentService.getPaymentById(1L)).thenReturn(payment);
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(student));
+        when(paymentService.getPaymentById(1L)).thenReturn(paymentDto);
+        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudent()));
 
         mockMvc.perform(get("/payments/edit/1"))
                 .andExpect(status().isOk())
@@ -140,26 +135,26 @@ class PaymentViewControllerTest {
     @Test
     void updatePayment_whenValid() throws Exception {
         Student student = createStudent();
+        PaymentDto paymentDto = createPaymentDto(1L);
 
         when(studentService.getStudentById(1L)).thenReturn(student);
-        when(paymentService.updatePayment(any(Payment.class))).thenReturn(new Payment());
+        when(paymentService.updatePayment(any(PaymentDto.class))).thenReturn(paymentDto);
 
         mockMvc.perform(post("/payments/update/1")
                         .param("amount", "150")
                         .param("currency", "EUR")
                         .param("paymentDate", "2025-12-18")
                         .param("paymentMethod", "CARD")
-                        .param("student.id", "1"))
+                        .param("studentId", "1"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/profile/1"));
     }
 
     @Test
     void updatePayment_whenInvalid_noStudent() throws Exception {
-        Payment payment = new Payment();
-        payment.setId(1L);
+        PaymentDto paymentDto = createPaymentDto(1L);
 
-        when(paymentService.getPaymentById(1L)).thenReturn(payment);
+        when(paymentService.getPaymentById(1L)).thenReturn(paymentDto);
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/payments/update/1")
@@ -169,24 +164,20 @@ class PaymentViewControllerTest {
                         .param("paymentMethod", "CARD"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/edit-payment"))
-                .andExpect(model().attributeHasFieldErrors("payment", "student"));
+                .andExpect(model().attributeHasFieldErrors("payment", "studentId"));
     }
 
     @Test
     void updatePayment_whenInvalid_bindingResultErrors() throws Exception {
-        Payment payment = new Payment();
-        payment.setId(1L);
-        Student student = new Student();
-        student.setId(1L);
-        payment.setStudent(student);
+        PaymentDto paymentDto = createPaymentDto(1L);
+        paymentDto.setStudentId(1L);
 
-        when(paymentService.getPaymentById(anyLong())).thenReturn(payment);
-        when(studentService.getAllActiveStudents()).thenReturn(List.of(student));
-
+        when(paymentService.getPaymentById(anyLong())).thenReturn(paymentDto);
+        when(studentService.getAllActiveStudents()).thenReturn(List.of(createStudent()));
 
         mockMvc.perform(post("/payments/update/1")
                         .param("amount", "0") // Invalid
-                        .param("student.id", "1"))
+                        .param("studentId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/edit-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "amount"));
@@ -209,14 +200,16 @@ class PaymentViewControllerTest {
         return student;
     }
 
-    private Payment createPayment(Student student) {
-        Payment payment = new Payment();
-        payment.setId(1L);
-        payment.setAmount(BigDecimal.TEN);
-        payment.setCurrency(Currency.USD);
-        payment.setPaymentDate(LocalDate.now());
-        payment.setStudent(student);
-        payment.setPaymentMethod(PaymentMethod.CASH);
-        return payment;
+    private PaymentDto createPaymentDto(Long id) {
+        PaymentDto paymentDto = new PaymentDto();
+        paymentDto.setId(id);
+        paymentDto.setAmount(BigDecimal.TEN);
+        paymentDto.setCurrency(Currency.USD);
+        paymentDto.setPaymentDate(LocalDate.now());
+        paymentDto.setStudentId(1L);
+        paymentDto.setStudentFirstName("John");
+        paymentDto.setStudentLastName("Doe");
+        paymentDto.setPaymentMethod(PaymentMethod.CASH);
+        return paymentDto;
     }
 }

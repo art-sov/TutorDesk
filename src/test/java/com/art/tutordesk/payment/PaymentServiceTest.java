@@ -2,6 +2,7 @@ package com.art.tutordesk.payment;
 
 import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,12 +39,20 @@ public class PaymentServiceTest {
     @Mock
     private BalanceService balanceService;
 
+    @Mock
+    private PaymentMapper paymentMapper;
+
+    @Mock
+    private StudentService studentService;
+
     @InjectMocks
     private PaymentService paymentService;
 
     private Student student;
     private Payment payment1;
     private Payment payment2;
+    private PaymentDto paymentDto1;
+    private PaymentDto paymentDto2;
 
     @BeforeEach
     void setUp() {
@@ -59,47 +68,72 @@ public class PaymentServiceTest {
         payment1.setCurrency(Currency.USD);
         payment1.setPaymentDate(LocalDate.now());
 
+        paymentDto1 = new PaymentDto();
+        paymentDto1.setId(100L);
+        paymentDto1.setStudentId(student.getId());
+        paymentDto1.setStudentFirstName(student.getFirstName());
+        paymentDto1.setStudentLastName(student.getLastName());
+        paymentDto1.setAmount(new BigDecimal("50.00"));
+        paymentDto1.setCurrency(Currency.USD);
+        paymentDto1.setPaymentDate(LocalDate.now());
+
         payment2 = new Payment();
         payment2.setId(101L);
         payment2.setStudent(student);
         payment2.setAmount(new BigDecimal("75.00"));
         payment2.setCurrency(Currency.EUR);
         payment2.setPaymentDate(LocalDate.now().minusDays(1));
+
+        paymentDto2 = new PaymentDto();
+        paymentDto2.setId(101L);
+        paymentDto2.setStudentId(student.getId());
+        paymentDto2.setStudentFirstName(student.getFirstName());
+        paymentDto2.setStudentLastName(student.getLastName());
+        paymentDto2.setAmount(new BigDecimal("75.00"));
+        paymentDto2.setCurrency(Currency.EUR);
+        paymentDto2.setPaymentDate(LocalDate.now().minusDays(1));
     }
 
     @Test
     void getAllPayments_shouldReturnAllPayments() {
         when(paymentRepository.findAll()).thenReturn(Arrays.asList(payment1, payment2));
+        when(paymentMapper.toPaymentDto(payment1)).thenReturn(paymentDto1);
+        when(paymentMapper.toPaymentDto(payment2)).thenReturn(paymentDto2);
 
-        List<Payment> result = paymentService.getAllPayments();
+        List<PaymentDto> result = paymentService.getAllPayments();
 
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertTrue(result.contains(payment1));
-        assertTrue(result.contains(payment2));
+        assertTrue(result.contains(paymentDto1));
+        assertTrue(result.contains(paymentDto2));
         verify(paymentRepository, times(1)).findAll();
+        verify(paymentMapper, times(1)).toPaymentDto(payment1);
+        verify(paymentMapper, times(1)).toPaymentDto(payment2);
     }
 
     @Test
     void getAllPayments_shouldReturnEmptyList_whenNoPayments() {
         when(paymentRepository.findAll()).thenReturn(List.of());
 
-        List<Payment> result = paymentService.getAllPayments();
+        List<PaymentDto> result = paymentService.getAllPayments();
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(paymentRepository, times(1)).findAll();
+        verify(paymentMapper, never()).toPaymentDto(any(Payment.class));
     }
 
     @Test
     void getPaymentById_shouldReturnPayment_whenFound() {
         when(paymentRepository.findById(100L)).thenReturn(Optional.of(payment1));
+        when(paymentMapper.toPaymentDto(payment1)).thenReturn(paymentDto1);
 
-        Payment result = paymentService.getPaymentById(100L);
+        PaymentDto result = paymentService.getPaymentById(100L);
 
         assertNotNull(result);
-        assertEquals(payment1.getId(), result.getId());
+        assertEquals(paymentDto1.getId(), result.getId());
         verify(paymentRepository, times(1)).findById(100L);
+        verify(paymentMapper, times(1)).toPaymentDto(payment1);
     }
 
     @Test
@@ -111,65 +145,88 @@ public class PaymentServiceTest {
 
         assertEquals("Payment not found with id: 999", exception.getMessage());
         verify(paymentRepository, times(1)).findById(999L);
+        verify(paymentMapper, never()).toPaymentDto(any(Payment.class));
     }
 
     @Test
     void createPayment_shouldSavePaymentAndUpdateBalance() {
+        when(paymentMapper.toPayment(any(PaymentDto.class))).thenReturn(payment1);
+        when(studentService.getStudentById(student.getId())).thenReturn(student);
         when(paymentRepository.save(payment1)).thenReturn(payment1);
+        when(paymentMapper.toPaymentDto(payment1)).thenReturn(paymentDto1);
 
-        Payment createdPayment = paymentService.createPayment(payment1);
+        PaymentDto createdPaymentDto = paymentService.createPayment(paymentDto1);
 
-        assertNotNull(createdPayment);
-        assertEquals(payment1.getId(), createdPayment.getId());
+        assertNotNull(createdPaymentDto);
+        assertEquals(paymentDto1.getId(), createdPaymentDto.getId());
+        verify(paymentMapper, times(1)).toPayment(any(PaymentDto.class));
+        verify(studentService, times(1)).getStudentById(student.getId());
         verify(paymentRepository, times(1)).save(payment1);
         verify(balanceService, times(1)).changeBalance(
                 student.getId(), payment1.getCurrency(), payment1.getAmount());
         verify(balanceService, times(1)).resyncPaymentStatus(student.getId());
+        verify(paymentMapper, times(1)).toPaymentDto(payment1);
     }
 
     @Test
     void updatePayment_shouldUpdatePaymentAndBalance() {
-        Payment updatedPayment = new Payment();
-        updatedPayment.setId(100L);
-        updatedPayment.setStudent(student);
-        updatedPayment.setAmount(new BigDecimal("60.00")); // Amount changed from 50.00 to 60.00
-        updatedPayment.setCurrency(Currency.USD);
-        updatedPayment.setPaymentDate(LocalDate.now());
+        PaymentDto updatedPaymentDto = new PaymentDto();
+        updatedPaymentDto.setId(100L);
+        updatedPaymentDto.setStudentId(student.getId());
+        updatedPaymentDto.setAmount(new BigDecimal("60.00"));
+        updatedPaymentDto.setCurrency(Currency.USD);
+        updatedPaymentDto.setPaymentDate(LocalDate.now());
+
+        Payment updatedPaymentEntity = new Payment();
+        updatedPaymentEntity.setId(100L);
+        updatedPaymentEntity.setStudent(student);
+        updatedPaymentEntity.setAmount(new BigDecimal("60.00"));
+        updatedPaymentEntity.setCurrency(Currency.USD);
+        updatedPaymentEntity.setPaymentDate(LocalDate.now());
 
         when(paymentRepository.findById(100L)).thenReturn(Optional.of(payment1));
-        when(paymentRepository.save(updatedPayment)).thenReturn(updatedPayment);
+        doNothing().when(paymentMapper).updatePaymentFromDto(any(PaymentDto.class), eq(payment1));
+        when(studentService.getStudentById(student.getId())).thenReturn(student);
+        when(paymentRepository.save(payment1)).thenReturn(updatedPaymentEntity);
+        when(paymentMapper.toPaymentDto(updatedPaymentEntity)).thenReturn(updatedPaymentDto);
 
-        Payment result = paymentService.updatePayment(updatedPayment);
+        PaymentDto result = paymentService.updatePayment(updatedPaymentDto);
 
         assertNotNull(result);
-        assertEquals(updatedPayment.getAmount(), result.getAmount());
+        assertEquals(updatedPaymentDto.getAmount(), result.getAmount());
         verify(paymentRepository, times(1)).findById(100L);
-        verify(paymentRepository, times(1)).save(updatedPayment);
+        verify(paymentMapper, times(1)).updatePaymentFromDto(any(PaymentDto.class), eq(payment1));
+        verify(studentService, times(1)).getStudentById(student.getId());
+        verify(paymentRepository, times(1)).save(payment1);
 
         ArgumentCaptor<BigDecimal> deltaCaptor = ArgumentCaptor.forClass(BigDecimal.class);
         verify(balanceService, times(1)).changeBalance(eq(student.getId()), eq(Currency.USD), deltaCaptor.capture());
-        assertEquals(new BigDecimal("10.00"), deltaCaptor.getValue()); // 60.00 - 50.00 = 10.00
+        assertEquals(new BigDecimal("10.00"), deltaCaptor.getValue());
         verify(balanceService, times(1)).resyncPaymentStatus(student.getId());
+        verify(paymentMapper, times(1)).toPaymentDto(updatedPaymentEntity);
     }
 
     @Test
     void updatePayment_shouldThrowException_whenPaymentNotFound() {
-        Payment nonExistentPayment = new Payment();
-        nonExistentPayment.setId(999L);
+        PaymentDto nonExistentPaymentDto = new PaymentDto();
+        nonExistentPaymentDto.setId(999L);
         when(paymentRepository.findById(999L)).thenReturn(Optional.empty());
 
         RuntimeException exception = assertThrows(RuntimeException.class, () ->
-                paymentService.updatePayment(nonExistentPayment));
+                paymentService.updatePayment(nonExistentPaymentDto));
 
         assertEquals("Payment not found for update with id: 999", exception.getMessage());
         verify(paymentRepository, times(1)).findById(999L);
+        verify(paymentMapper, never()).updatePaymentFromDto(any(PaymentDto.class), any(Payment.class));
+        verify(studentService, never()).getStudentById(anyLong());
         verify(paymentRepository, never()).save(any(Payment.class));
         verify(balanceService, never()).changeBalance(anyLong(), any(Currency.class), any(BigDecimal.class));
         verify(balanceService, never()).resyncPaymentStatus(anyLong());
+        verify(paymentMapper, never()).toPaymentDto(any(Payment.class));
     }
 
     @Test
-    void deletePayment_shouldDeletePaymentAndUpdateBalance() {
+    void deletePayment_shouldDeletePaymentAndBalance() {
         when(paymentRepository.findById(100L)).thenReturn(Optional.of(payment1));
         doNothing().when(paymentRepository).deleteById(100L);
 

@@ -133,7 +133,7 @@ public class StudentLessonFlowIT {
 
         // --- Action: Create a payment that covers the first two lessons but not the third ---
         mockMvc.perform(post("/payments/create")
-                        .param("student.id", savedStudent.getId().toString())
+                        .param("studentId", savedStudent.getId().toString())
                         .param("amount", "130.00") // Covers lesson 1 & 2 (120), with 10 leftover
                         .param("currency", "EUR")
                         .param("paymentDate", "2025-12-23")
@@ -239,7 +239,7 @@ public class StudentLessonFlowIT {
 
         // 3. Make a payment for the lesson
         mockMvc.perform(post("/payments/create")
-                        .param("student.id", student.getId().toString())
+                        .param("studentId", student.getId().toString())
                         .param("amount", "75.00")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-10-10")
@@ -303,7 +303,7 @@ public class StudentLessonFlowIT {
 
         // 3. Make a payment for the student
         mockMvc.perform(post("/payments/create")
-                        .param("student.id", studentId.toString())
+                        .param("studentId", studentId.toString())
                         .param("amount", "100.00")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-11-20")

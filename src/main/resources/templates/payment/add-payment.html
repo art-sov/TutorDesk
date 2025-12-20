@@ -18,8 +18,8 @@
         </div>
         <div class="mb-3">
             <label for="student" class="form-label">Student:</label>
-            <select id="student" th:field="*{student.id}" class="form-control"
-                    th:classappend="${#fields.hasErrors('student') ? 'is-invalid' : ''}">
+            <select id="student" th:field="*{studentId}" class="form-control"
+                    th:classappend="${#fields.hasErrors('studentId') ? 'is-invalid' : ''}">
                 <option value="">Select Student</option>
                 <option th:each="student : ${students}"
                         th:value="${student.id}"
@@ -27,7 +27,7 @@
                     Student Name
                 </option>
             </select>
-            <div class="invalid-feedback" th:if="${#fields.hasErrors('student')}" th:errors="*{student}"></div>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('studentId')}" th:errors="*{studentId}"></div>
         </div>
         <div class="mb-3">
             <label for="amount" class="form-label">Amount:</label>
