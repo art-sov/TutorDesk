@@ -9,23 +9,20 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashSet;
 import java.util.Set;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "lessons")
-@Data
 @NoArgsConstructor
-@AllArgsConstructor
-@ToString(exclude = "lessonStudents")
 public class Lesson {
 
     @Id
@@ -41,7 +38,6 @@ public class Lesson {
     @Size(max = 200, message = "Topic cannot exceed 200 characters")
     private String topic;
 
-    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 }

@@ -12,32 +12,28 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
-@Data
+
+@Getter
+@Setter
 @Entity
 @Table(name = "lesson_student")
 @NoArgsConstructor
-@AllArgsConstructor
-@ToString(exclude = {"lesson", "student"}) // Exclude to prevent StackOverflowError
 public class LessonStudent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @EqualsAndHashCode.Exclude
     @ManyToOne
     @JoinColumn(name = "lesson_id", nullable = false)
     private Lesson lesson;
 
-    @EqualsAndHashCode.Exclude
     @ManyToOne
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
