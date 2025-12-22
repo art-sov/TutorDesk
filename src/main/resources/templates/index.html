@@ -8,6 +8,12 @@
     <link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon">
 </head>
 <body class="index-page">
+<div class="logout-container">
+    <form th:action="@{/logout}" method="post" class="d-inline">
+        <button type="submit" class="logout-button">Logout</button>
+    </form>
+</div>
+
 <div class="container index-page">
     <h1>Welcome to TutorDesk</h1>
     <p class="lead">A simple application to manage your tutoring activities.</p>

@@ -2,6 +2,7 @@ package com.art.tutordesk.integrationtest;
 
 import com.art.tutordesk.balance.Balance;
 import com.art.tutordesk.balance.BalanceRepository;
+import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
@@ -15,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +40,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
+@Import(SecurityConfig.class)
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 public class StudentLessonFlowIT {
 
     @Autowired
@@ -59,7 +65,8 @@ public class StudentLessonFlowIT {
                         .param("lastName", "Doe")
                         .param("priceIndividual", "50.00")
                         .param("priceGroup", "30.00")
-                        .param("currency", "USD"))
+                        .param("currency", "USD")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
 
@@ -74,7 +81,8 @@ public class StudentLessonFlowIT {
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-20")
                         .param("startTime", "10:00")
-                        .param("selectedStudentIds", student.getId().toString()))
+                        .param("selectedStudentIds", student.getId().toString())
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"));
 
@@ -137,7 +145,8 @@ public class StudentLessonFlowIT {
                         .param("amount", "130.00") // Covers lesson 1 & 2 (120), with 10 leftover
                         .param("currency", "EUR")
                         .param("paymentDate", "2025-12-23")
-                        .param("paymentMethod", "CASH"))
+                        .param("paymentMethod", "CASH")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/list"));
 
@@ -180,7 +189,8 @@ public class StudentLessonFlowIT {
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-11-15")
                         .param("startTime", "12:00")
-                        .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString()))
+                        .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString())
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         // 3. Verify initial state: both are charged the group price
@@ -198,7 +208,8 @@ public class StudentLessonFlowIT {
         mockMvc.perform(post("/lessons/update/{id}", savedLesson.getId())
                         .param("lessonDate", "2025-11-15")
                         .param("startTime", "12:00")
-                        .param("selectedStudentIds", studentA.getId().toString())) // Only student A remains
+                        .param("selectedStudentIds", studentA.getId().toString()) // Only student A remains
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         // 5. Final Assertions
@@ -243,7 +254,8 @@ public class StudentLessonFlowIT {
                         .param("amount", "75.00")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-10-10")
-                        .param("paymentMethod", "PAYPAL"))
+                        .param("paymentMethod", "PAYPAL")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         // --- Initial Assertions: Verify lesson is PAID and balance is zero ---
@@ -254,7 +266,8 @@ public class StudentLessonFlowIT {
         long paymentId = paymentRepository.findAll().getFirst().getId();
 
         // --- Action 1: Delete the Payment ---
-        mockMvc.perform(post("/payments/delete/{id}", paymentId))
+        mockMvc.perform(post("/payments/delete/{id}", paymentId)
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/list"));
 
@@ -268,7 +281,8 @@ public class StudentLessonFlowIT {
         assertThat(paymentRepository.findAll()).isEmpty();
 
         // --- Action 2: Delete the Lesson ---
-        mockMvc.perform(post("/lessons/delete/{id}", savedLesson.getId()))
+        mockMvc.perform(post("/lessons/delete/{id}", savedLesson.getId())
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"));
 
@@ -288,7 +302,8 @@ public class StudentLessonFlowIT {
                         .param("lastName", "Student")
                         .param("priceIndividual", "100.00")
                         .param("priceGroup", "80.00")
-                        .param("currency", "USD"))
+                        .param("currency", "USD")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         Student student = studentRepository.findAll().getFirst();
@@ -298,7 +313,8 @@ public class StudentLessonFlowIT {
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-11-20")
                         .param("startTime", "10:00")
-                        .param("selectedStudentIds", studentId.toString()))
+                        .param("selectedStudentIds", studentId.toString())
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         // 3. Make a payment for the student
@@ -307,7 +323,8 @@ public class StudentLessonFlowIT {
                         .param("amount", "100.00")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-11-20")
-                        .param("paymentMethod", "CARD"))
+                        .param("paymentMethod", "CARD")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
         // 4. Verify the lesson is paid
@@ -317,7 +334,8 @@ public class StudentLessonFlowIT {
         assertThat(balance.getAmount()).isEqualByComparingTo("0.00");
 
         // 5. Deactivate the student
-        mockMvc.perform(post("/students/deactivate/{id}", studentId))
+        mockMvc.perform(post("/students/deactivate/{id}", studentId)
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
 
@@ -325,7 +343,8 @@ public class StudentLessonFlowIT {
         assertThat(deactivatedStudent.isActive()).isFalse();
 
         // 6. Hard-delete the student
-        mockMvc.perform(post("/students/hard-delete/{id}", studentId))
+        mockMvc.perform(post("/students/hard-delete/{id}", studentId)
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
 

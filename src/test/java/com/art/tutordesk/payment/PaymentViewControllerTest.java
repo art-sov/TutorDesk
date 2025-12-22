@@ -1,10 +1,13 @@
 package com.art.tutordesk.payment;
 
+import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -24,7 +28,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+@Import(SecurityConfig.class)
 @WebMvcTest(controllers = PaymentViewController.class)
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class PaymentViewControllerTest {
 
     @Autowired
@@ -84,7 +90,8 @@ class PaymentViewControllerTest {
                         .param("currency", "USD")
                         .param("paymentDate", "2025-12-17")
                         .param("paymentMethod", "CASH")
-                        .param("studentId", "1"))
+                        .param("studentId", "1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/list"));
     }
@@ -97,7 +104,8 @@ class PaymentViewControllerTest {
                         .param("amount", "100")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-12-17")
-                        .param("paymentMethod", "CASH"))
+                        .param("paymentMethod", "CASH")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/add-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "studentId"));
@@ -109,7 +117,8 @@ class PaymentViewControllerTest {
 
         mockMvc.perform(post("/payments/create")
                         .param("amount", "-100")
-                        .param("studentId", "1"))
+                        .param("studentId", "1")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/add-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "amount"));
@@ -145,7 +154,8 @@ class PaymentViewControllerTest {
                         .param("currency", "EUR")
                         .param("paymentDate", "2025-12-18")
                         .param("paymentMethod", "CARD")
-                        .param("studentId", "1"))
+                        .param("studentId", "1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/profile/1"));
     }
@@ -161,7 +171,8 @@ class PaymentViewControllerTest {
                         .param("amount", "150")
                         .param("currency", "EUR")
                         .param("paymentDate", "2025-12-18")
-                        .param("paymentMethod", "CARD"))
+                        .param("paymentMethod", "CARD")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/edit-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "studentId"));
@@ -177,7 +188,8 @@ class PaymentViewControllerTest {
 
         mockMvc.perform(post("/payments/update/1")
                         .param("amount", "0")
-                        .param("studentId", "1"))
+                        .param("studentId", "1")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/edit-payment"))
                 .andExpect(model().attributeHasFieldErrors("payment", "amount"));
@@ -187,7 +199,8 @@ class PaymentViewControllerTest {
     void deletePayment() throws Exception {
         doNothing().when(paymentService).deletePayment(1L);
 
-        mockMvc.perform(post("/payments/delete/1"))
+        mockMvc.perform(post("/payments/delete/1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/payments/list"));
     }

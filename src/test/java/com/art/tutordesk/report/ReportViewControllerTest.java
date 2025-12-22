@@ -1,10 +1,13 @@
 package com.art.tutordesk.report;
 
+import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,13 +20,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+@Import(SecurityConfig.class)
 @WebMvcTest(ReportViewController.class)
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class ReportViewControllerTest {
 
     @Autowired
@@ -64,7 +70,8 @@ class ReportViewControllerTest {
                         .param("endDate", "2025-01-31")
                         .param("selectedStudentIds", "1", "2")
                         .param("includeLessons", "true")
-                        .param("includePayments", "false"))
+                        .param("includePayments", "false")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("report/view-report"))
                 .andExpect(model().attributeExists("reportItems"))

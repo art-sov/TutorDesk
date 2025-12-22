@@ -1,5 +1,6 @@
 package com.art.tutordesk.lesson;
 
+import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
@@ -10,6 +11,8 @@ import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,6 +26,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -31,7 +35,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+@Import(SecurityConfig.class)
 @WebMvcTest(LessonViewController.class)
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class LessonViewControllerTest {
 
     @Autowired
@@ -86,7 +92,8 @@ class LessonViewControllerTest {
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-25")
                         .param("startTime", "10:00")
-                        .param("selectedStudentIds", "1", "2"))
+                        .param("selectedStudentIds", "1", "2")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"))
                 .andExpect(flash().attributeExists("message"));
@@ -98,7 +105,8 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-25")
-                        .param("startTime", "10:00"))
+                        .param("startTime", "10:00")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/add-lesson"))
                 .andExpect(model().hasErrors())
@@ -110,7 +118,7 @@ class LessonViewControllerTest {
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/lessons/create")
-                        .param("selectedStudentIds", "1")) // Missing date and time
+                        .param("selectedStudentIds", "1").with(csrf())) // Missing date and time
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/add-lesson"))
                 .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate", "startTime"));
@@ -157,7 +165,8 @@ class LessonViewControllerTest {
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
                         .param("startTime", "11:00")
-                        .param("selectedStudentIds", "1"))
+                        .param("selectedStudentIds", "1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/profile/1"))
                 .andExpect(flash().attributeExists("message"));
@@ -174,7 +183,8 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
-                        .param("startTime", "11:00"))
+                        .param("startTime", "11:00")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/edit-lesson"))
                 .andExpect(model().hasErrors())
@@ -191,7 +201,7 @@ class LessonViewControllerTest {
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/lessons/update/1")
-                        .param("selectedStudentIds", "1")) // missing date/time
+                        .param("selectedStudentIds", "1").with(csrf())) // missing date/time
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/edit-lesson"))
                 .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate", "startTime"));
@@ -201,7 +211,8 @@ class LessonViewControllerTest {
     void deleteLesson() throws Exception {
         doNothing().when(lessonService).deleteLesson(1L);
 
-        mockMvc.perform(post("/lessons/delete/1"))
+        mockMvc.perform(post("/lessons/delete/1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"))
                 .andExpect(flash().attributeExists("message"));

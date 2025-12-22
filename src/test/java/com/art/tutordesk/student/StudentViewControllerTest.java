@@ -1,11 +1,14 @@
 package com.art.tutordesk.student;
 
 import com.art.tutordesk.balance.BalanceService;
+import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -15,6 +18,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -22,7 +26,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+@Import(SecurityConfig.class)
 @WebMvcTest(StudentViewController.class)
+@WithMockUser(username = "admin", roles = {"ADMIN"})
 class StudentViewControllerTest {
 
     @Autowired
@@ -52,7 +58,8 @@ class StudentViewControllerTest {
                         .param("lastName", "Doe")
                         .param("priceIndividual", "10")
                         .param("priceGroup", "1")
-                        .param("currency", "USD"))
+                        .param("currency", "USD")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
     }
@@ -60,7 +67,8 @@ class StudentViewControllerTest {
     @Test
     void createStudent_whenInvalid() throws Exception {
         mockMvc.perform(post("/students/create")
-                        .param("firstName", "")) // Blank name
+                        .param("firstName", "")
+                        .with(csrf())) // Blank name
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/add-student"))
                 .andExpect(model().attributeHasFieldErrors("student", "firstName"));
@@ -98,7 +106,8 @@ class StudentViewControllerTest {
     void deactivateStudent() throws Exception {
         doNothing().when(studentService).deactivateStudent(1L);
 
-        mockMvc.perform(post("/students/deactivate/1"))
+        mockMvc.perform(post("/students/deactivate/1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
     }
@@ -107,7 +116,8 @@ class StudentViewControllerTest {
     void hardDeleteStudent() throws Exception {
         doNothing().when(studentService).hardDeleteStudent(1L);
 
-        mockMvc.perform(post("/students/hard-delete/1"))
+        mockMvc.perform(post("/students/hard-delete/1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/list"));
     }
@@ -116,7 +126,8 @@ class StudentViewControllerTest {
     void activateStudent() throws Exception {
         doNothing().when(studentService).activateStudent(1L);
 
-        mockMvc.perform(post("/students/activate/1"))
+        mockMvc.perform(post("/students/activate/1")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/profile/1"));
     }
@@ -151,7 +162,8 @@ class StudentViewControllerTest {
                         .param("lastName", "Updated")
                         .param("priceIndividual", "12")
                         .param("priceGroup", "2")
-                        .param("currency", "EUR"))
+                        .param("currency", "EUR")
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/students/profile/1"));
     }
@@ -159,7 +171,8 @@ class StudentViewControllerTest {
     @Test
     void updateStudent_whenInvalid() throws Exception {
         mockMvc.perform(post("/students/update/1")
-                        .param("firstName", "")) // Blank name
+                        .param("firstName", "") // Blank name
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/edit-student"))
                 .andExpect(model().attributeHasFieldErrors("student", "firstName"));
