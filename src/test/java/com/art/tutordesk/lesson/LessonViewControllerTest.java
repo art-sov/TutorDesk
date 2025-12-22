@@ -2,9 +2,9 @@ package com.art.tutordesk.lesson;
 
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.dto.LessonStudentDto;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.payment.Currency;
-import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -122,7 +122,7 @@ class LessonViewControllerTest {
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.now());
         lesson.setStartTime(LocalTime.now());
-        lesson.setLessonStudents(Collections.emptySet());
+        lesson.setStudentAssociations(Collections.emptyList());
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
 
@@ -134,17 +134,15 @@ class LessonViewControllerTest {
 
     @Test
     void editLessonForm() throws Exception {
-        Student studentEntity = new Student();
-        studentEntity.setId(1L);
-        LessonStudent lessonStudent = new LessonStudent();
-        lessonStudent.setStudent(studentEntity);
+        LessonStudentDto lessonStudentDto = new LessonStudentDto();
+        lessonStudentDto.setStudentId(1L);
 
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
-        lesson.setLessonStudents(Set.of(lessonStudent));
+        lesson.setStudentAssociations(List.of(lessonStudentDto));
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudentDto(1L)));
+        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudentDto()));
 
         mockMvc.perform(get("/lessons/edit/1"))
                 .andExpect(status().isOk())
@@ -169,7 +167,7 @@ class LessonViewControllerTest {
     void updateLesson_whenInvalid_noStudents() throws Exception {
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
-        lesson.setLessonStudents(Collections.emptySet());
+        lesson.setStudentAssociations(Collections.emptyList());
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
@@ -187,7 +185,7 @@ class LessonViewControllerTest {
     void updateLesson_whenInvalid_bindingResultErrors() throws Exception {
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
-        lesson.setLessonStudents(Collections.emptySet());
+        lesson.setStudentAssociations(Collections.emptyList());
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
@@ -209,9 +207,9 @@ class LessonViewControllerTest {
                 .andExpect(flash().attributeExists("message"));
     }
 
-    private static StudentDto createStudentDto(Long id) {
+    private static StudentDto createStudentDto() {
         StudentDto student = new StudentDto();
-        student.setId(id);
+        student.setId(1L);
         student.setFirstName("Test");
         student.setLastName("Student");
         student.setPriceIndividual(BigDecimal.TEN);

@@ -19,11 +19,11 @@
 
             <h5 class="card-title mt-4">Students Enrolled</h5>
             <ul class="list-group list-group-flush">
-                <li class="list-group-item" th:each="lessonStudent : ${lesson.lessonStudents}" style="background: rgba(255, 255, 255, 0.05); color: white;">
-                    <strong th:text="${lessonStudent.student.firstName + ' ' + lessonStudent.student.lastName}"></strong>
+                <li class="list-group-item" th:each="lessonStudent : ${lesson.studentAssociations}" style="background: rgba(255, 255, 255, 0.05); color: white;">
+                    <strong th:text="${lessonStudent.studentFirstName + ' ' + lessonStudent.studentLastName}"></strong>
                     - <span th:text="${lessonStudent.paymentStatus}"></span>
                 </li>
-                <li class="list-group-item" th:if="${lesson.lessonStudents.isEmpty()}" style="background: rgba(255, 255, 255, 0.05); color: white;">No students enrolled.</li>
+                <li class="list-group-item" th:if="${lesson.studentAssociations.isEmpty()}" style="background: rgba(255, 255, 255, 0.05); color: white;">No students enrolled.</li>
             </ul>
         </div>
     </div>

@@ -2,6 +2,9 @@ package com.art.tutordesk.lesson;
 
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.mapper.LessonMapper;
+import com.art.tutordesk.lesson.mapper.LessonMapperImpl;
+import com.art.tutordesk.lesson.mapper.LessonStudentMapperImpl;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +21,9 @@ import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-@SpringBootTest(classes = {LessonMapperImpl.class, PaymentStatusUtil.class})
+@SpringBootTest(classes = {LessonMapperImpl.class, LessonStudentMapperImpl.class})
 public class LessonMapperTest {
 
     @Autowired
@@ -99,7 +103,7 @@ public class LessonMapperTest {
         assertThat(dto.getLessonDate()).isEqualTo(lesson.getLessonDate());
         assertThat(dto.getStartTime()).isEqualTo(lesson.getStartTime());
         assertThat(dto.getTopic()).isEqualTo(lesson.getTopic());
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.PARTIALLY_PAID); // As per PaymentStatusUtil logic
+        assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).containsExactlyInAnyOrder("John Doe", "Jane Smith", "Peter Jones");
     }
 
@@ -111,7 +115,7 @@ public class LessonMapperTest {
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(lesson.getId());
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID); // As per PaymentStatusUtil logic
+        assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).isEmpty();
     }
 
@@ -125,7 +129,7 @@ public class LessonMapperTest {
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
 
         assertThat(dto).isNotNull();
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.FREE);
+        assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).containsExactlyInAnyOrder("Peter Jones", "Mark White");
     }
 
@@ -139,7 +143,7 @@ public class LessonMapperTest {
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
 
         assertThat(dto).isNotNull();
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
+        assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).containsExactlyInAnyOrder("John Doe", "Mark White");
     }
 
@@ -153,7 +157,7 @@ public class LessonMapperTest {
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
 
         assertThat(dto).isNotNull();
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
+        assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).containsExactlyInAnyOrder("Jane Smith", "Mark White");
     }
 
@@ -172,8 +176,8 @@ public class LessonMapperTest {
         assertThat(dto.getLessonDate()).isEqualTo(lesson.getLessonDate());
         assertThat(dto.getStartTime()).isEqualTo(lesson.getStartTime());
         assertThat(dto.getTopic()).isEqualTo(lesson.getTopic());
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.PARTIALLY_PAID); // As per PaymentStatusUtil logic
-        assertThat(dto.getLessonStudents()).hasSize(3); // Should contain all LessonStudents
+        assertNull(dto.getPaymentStatus());
+        assertThat(dto.getStudentAssociations()).hasSize(3); // Should contain all LessonStudents
     }
 
     @Test
@@ -184,8 +188,8 @@ public class LessonMapperTest {
 
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(lesson.getId());
-        assertThat(dto.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID); // As per PaymentStatusUtil logic
-        assertThat(dto.getLessonStudents()).isEmpty();
+        assertNull(dto.getPaymentStatus());
+        assertThat(dto.getStudentAssociations()).isEmpty();
     }
 
     @Test

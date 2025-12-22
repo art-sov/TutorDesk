@@ -2,9 +2,10 @@ package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.LessonMapper;
+import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.repository.LessonRepository;
@@ -33,12 +34,17 @@ public class LessonService {
     private final LessonStudentService lessonStudentService;
     private final BalanceService balanceService;
     private final LessonMapper lessonMapper;
+    private final PaymentStatusUtil paymentStatusUtil;
 
     public List<LessonListDTO> getLessonsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
         log.debug("Found {} lessons between {} and {}", lessons.size(), startDate, endDate);
         return lessons.stream()
-                .map(lessonMapper::toLessonListDTO)
+                .map(lesson -> {
+                    LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
+                    dto.setPaymentStatus(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents()));
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -48,7 +54,9 @@ public class LessonService {
                     log.warn("Lesson not found with id: {}", id);
                     return new RuntimeException("Lesson not found with id: " + id);
                 });
-        return lessonMapper.toLessonProfileDTO(lesson);
+        LessonProfileDTO dto = lessonMapper.toLessonProfileDTO(lesson);
+        dto.setPaymentStatus(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents()));
+        return dto;
     }
 
     @Transactional

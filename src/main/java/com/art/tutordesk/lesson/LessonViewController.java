@@ -2,8 +2,8 @@ package com.art.tutordesk.lesson;
 
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.dto.LessonStudentDto;
 import com.art.tutordesk.lesson.service.LessonService;
-import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,9 +87,8 @@ public class LessonViewController {
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
 
         // Get IDs of students already associated with this lesson
-        List<Long> selectedStudentIds = lesson.getLessonStudents().stream()
-                .map(LessonStudent::getStudent)
-                .map(Student::getId)
+        List<Long> selectedStudentIds = lesson.getStudentAssociations().stream()
+                .map(LessonStudentDto::getStudentId)
                 .collect(Collectors.toList());
         model.addAttribute("selectedStudentIds", selectedStudentIds);
 
@@ -110,9 +109,8 @@ public class LessonViewController {
             model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
             // Get IDs of students already associated with this lesson to pre-select them on error
             LessonProfileDTO existingLesson = lessonService.getLessonById(id);
-            List<Long> preSelectedStudentIds = existingLesson.getLessonStudents().stream()
-                    .map(LessonStudent::getStudent)
-                    .map(Student::getId)
+            List<Long> preSelectedStudentIds = existingLesson.getStudentAssociations().stream()
+                    .map(LessonStudentDto::getStudentId)
                     .collect(Collectors.toList());
             model.addAttribute("selectedStudentIds", preSelectedStudentIds);
             return "lesson/edit-lesson";

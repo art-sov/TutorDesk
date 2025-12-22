@@ -2,7 +2,8 @@ package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.LessonMapper;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
+import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
@@ -53,6 +54,8 @@ class LessonServiceTest {
     private BalanceService balanceService;
     @Mock
     private LessonMapper lessonMapper;
+    @Mock
+    private PaymentStatusUtil paymentStatusUtil;
 
     @InjectMocks
     private LessonService lessonService;
@@ -147,7 +150,7 @@ class LessonServiceTest {
         dto.setPaymentStatus(PaymentStatus.PAID);
 
         when(lessonMapper.toLessonProfileDTO(lesson1)).thenReturn(dto);
-
+        when(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson1.getLessonStudents())).thenReturn(PaymentStatus.PAID);
         LessonProfileDTO result = lessonService.getLessonById(1L);
 
         assertNotNull(result);
