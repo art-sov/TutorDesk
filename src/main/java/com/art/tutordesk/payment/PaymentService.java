@@ -44,7 +44,7 @@ public class PaymentService {
     public PaymentDto createPayment(PaymentDto paymentDto) {
         log.info("Attempting to create payment from DTO: {}", paymentDto);
         Payment payment = paymentMapper.toPayment(paymentDto);
-        Student student = studentService.getStudentById(paymentDto.getStudentId());
+        Student student = studentService.getStudentEntityById(paymentDto.getStudentId());
         payment.setStudent(student);
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -70,7 +70,7 @@ public class PaymentService {
         BigDecimal newAmount = paymentDto.getAmount();
         BigDecimal delta = newAmount.subtract(oldAmount);
 
-        Student student = studentService.getStudentById(paymentDto.getStudentId());
+        Student student = studentService.getStudentEntityById(paymentDto.getStudentId());
 
         paymentMapper.updatePaymentFromDto(paymentDto, existingPayment);
         existingPayment.setStudent(student);

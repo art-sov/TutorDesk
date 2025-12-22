@@ -1,15 +1,15 @@
 package com.art.tutordesk.report;
 
-import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -24,7 +24,7 @@ public class ReportViewController {
     @GetMapping("/list")
     public String showReportPage(Model model) {
         // Get data for filters
-        List<Student> students = studentService.getAllActiveStudents();
+        List<StudentDto> students = studentService.getAllActiveStudents();
         model.addAttribute("students", students);
 
         // Get data for metrics from the service

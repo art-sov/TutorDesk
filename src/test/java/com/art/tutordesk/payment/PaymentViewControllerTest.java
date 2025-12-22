@@ -1,6 +1,6 @@
 package com.art.tutordesk.payment;
 
-import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,10 +73,10 @@ class PaymentViewControllerTest {
 
     @Test
     void createPayment_whenValid() throws Exception {
-        Student student = createStudent();
+        StudentDto studentDto = createStudentDto();
         PaymentDto paymentDto = createPaymentDto(null);
 
-        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentService.getStudentById(1L)).thenReturn(studentDto);
         when(paymentService.createPayment(any(PaymentDto.class))).thenReturn(paymentDto);
 
         mockMvc.perform(post("/payments/create")
@@ -121,7 +121,7 @@ class PaymentViewControllerTest {
         paymentDto.setStudentId(1L);
 
         when(paymentService.getPaymentById(1L)).thenReturn(paymentDto);
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudent()));
+        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudentDto()));
 
         mockMvc.perform(get("/payments/edit/1"))
                 .andExpect(status().isOk())
@@ -134,10 +134,10 @@ class PaymentViewControllerTest {
 
     @Test
     void updatePayment_whenValid() throws Exception {
-        Student student = createStudent();
+        StudentDto studentDto = createStudentDto();
         PaymentDto paymentDto = createPaymentDto(1L);
 
-        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentService.getStudentById(1L)).thenReturn(studentDto);
         when(paymentService.updatePayment(any(PaymentDto.class))).thenReturn(paymentDto);
 
         mockMvc.perform(post("/payments/update/1")
@@ -173,10 +173,10 @@ class PaymentViewControllerTest {
         paymentDto.setStudentId(1L);
 
         when(paymentService.getPaymentById(anyLong())).thenReturn(paymentDto);
-        when(studentService.getAllActiveStudents()).thenReturn(List.of(createStudent()));
+        when(studentService.getAllActiveStudents()).thenReturn(List.of(createStudentDto()));
 
         mockMvc.perform(post("/payments/update/1")
-                        .param("amount", "0") // Invalid
+                        .param("amount", "0")
                         .param("studentId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("payment/edit-payment"))
@@ -192,11 +192,15 @@ class PaymentViewControllerTest {
                 .andExpect(redirectedUrl("/payments/list"));
     }
 
-    private Student createStudent() {
-        Student student = new Student();
+    private static StudentDto createStudentDto() {
+        StudentDto student = new StudentDto();
         student.setId(1L);
         student.setFirstName("John");
         student.setLastName("Doe");
+        student.setPriceIndividual(BigDecimal.valueOf(50.00));
+        student.setPriceGroup(BigDecimal.valueOf(30.00));
+        student.setCurrency(Currency.USD);
+        student.setActive(true);
         return student;
     }
 

@@ -35,16 +35,12 @@ public class PaymentServiceTest {
 
     @Mock
     private PaymentRepository paymentRepository;
-
     @Mock
     private BalanceService balanceService;
-
     @Mock
     private PaymentMapper paymentMapper;
-
     @Mock
     private StudentService studentService;
-
     @InjectMocks
     private PaymentService paymentService;
 
@@ -151,7 +147,7 @@ public class PaymentServiceTest {
     @Test
     void createPayment_shouldSavePaymentAndUpdateBalance() {
         when(paymentMapper.toPayment(any(PaymentDto.class))).thenReturn(payment1);
-        when(studentService.getStudentById(student.getId())).thenReturn(student);
+        when(studentService.getStudentEntityById(student.getId())).thenReturn(student);
         when(paymentRepository.save(payment1)).thenReturn(payment1);
         when(paymentMapper.toPaymentDto(payment1)).thenReturn(paymentDto1);
 
@@ -160,7 +156,7 @@ public class PaymentServiceTest {
         assertNotNull(createdPaymentDto);
         assertEquals(paymentDto1.getId(), createdPaymentDto.getId());
         verify(paymentMapper, times(1)).toPayment(any(PaymentDto.class));
-        verify(studentService, times(1)).getStudentById(student.getId());
+        verify(studentService, times(1)).getStudentEntityById(student.getId());
         verify(paymentRepository, times(1)).save(payment1);
         verify(balanceService, times(1)).changeBalance(
                 student.getId(), payment1.getCurrency(), payment1.getAmount());
@@ -186,7 +182,7 @@ public class PaymentServiceTest {
 
         when(paymentRepository.findById(100L)).thenReturn(Optional.of(payment1));
         doNothing().when(paymentMapper).updatePaymentFromDto(any(PaymentDto.class), eq(payment1));
-        when(studentService.getStudentById(student.getId())).thenReturn(student);
+        when(studentService.getStudentEntityById(student.getId())).thenReturn(student);
         when(paymentRepository.save(payment1)).thenReturn(updatedPaymentEntity);
         when(paymentMapper.toPaymentDto(updatedPaymentEntity)).thenReturn(updatedPaymentDto);
 
@@ -196,7 +192,7 @@ public class PaymentServiceTest {
         assertEquals(updatedPaymentDto.getAmount(), result.getAmount());
         verify(paymentRepository, times(1)).findById(100L);
         verify(paymentMapper, times(1)).updatePaymentFromDto(any(PaymentDto.class), eq(payment1));
-        verify(studentService, times(1)).getStudentById(student.getId());
+        verify(studentService, times(1)).getStudentEntityById(student.getId());
         verify(paymentRepository, times(1)).save(payment1);
 
         ArgumentCaptor<BigDecimal> deltaCaptor = ArgumentCaptor.forClass(BigDecimal.class);

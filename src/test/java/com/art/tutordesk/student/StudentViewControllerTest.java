@@ -43,12 +43,9 @@ class StudentViewControllerTest {
 
     @Test
     void createStudent_whenValid() throws Exception {
-        Student student = createStudent();
-        student.setPriceIndividual(BigDecimal.TEN);
-        student.setPriceGroup(BigDecimal.ONE);
-        student.setCurrency(Currency.USD);
+        StudentDto studentDto = createStudentDto();
 
-        when(studentService.saveStudent(any(Student.class))).thenReturn(student);
+        when(studentService.saveStudent(any(StudentDto.class))).thenReturn(studentDto);
 
         mockMvc.perform(post("/students/create")
                         .param("firstName", "John")
@@ -71,10 +68,10 @@ class StudentViewControllerTest {
 
     @Test
     void showStudentList_whenShowActive() throws Exception {
-        Student student = createStudent();
-        student.setActive(true);
+        StudentDto studentDto = createStudentDto();
+        studentDto.setActive(true);
 
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(student));
+        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(studentDto));
 
         mockMvc.perform(get("/students/list"))
                 .andExpect(status().isOk())
@@ -85,10 +82,10 @@ class StudentViewControllerTest {
 
     @Test
     void showStudentList_whenShowInactive() throws Exception {
-        Student student = createStudent();
-        student.setActive(false);
+        StudentDto studentDto = createStudentDto();
+        studentDto.setActive(false);
 
-        when(studentService.getAllStudentsIncludingInactive()).thenReturn(Collections.singletonList(student));
+        when(studentService.getAllStudentsIncludingInactive()).thenReturn(Collections.singletonList(studentDto));
 
         mockMvc.perform(get("/students/list").param("showInactive", "true"))
                 .andExpect(status().isOk())
@@ -126,28 +123,28 @@ class StudentViewControllerTest {
 
     @Test
     void showEditStudentForm() throws Exception {
-        Student student = createStudent();
-        student.setPriceIndividual(BigDecimal.TEN);
-        student.setPriceGroup(BigDecimal.ONE);
-        student.setCurrency(Currency.USD);
+        StudentDto studentDto = createStudentDto();
+        studentDto.setPriceIndividual(BigDecimal.TEN);
+        studentDto.setPriceGroup(BigDecimal.ONE);
+        studentDto.setCurrency(Currency.USD);
 
-        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentService.getStudentById(1L)).thenReturn(studentDto);
 
         mockMvc.perform(get("/students/edit/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/edit-student"))
-                .andExpect(model().attribute("student", student))
+                .andExpect(model().attribute("student", studentDto))
                 .andExpect(model().attributeExists("currencies"));
     }
 
     @Test
     void updateStudent_whenValid() throws Exception {
-        Student student = createStudent();
-        student.setPriceIndividual(BigDecimal.TEN);
-        student.setPriceGroup(BigDecimal.ONE);
-        student.setCurrency(Currency.USD);
+        StudentDto studentDto = createStudentDto();
+        studentDto.setPriceIndividual(new BigDecimal("12"));
+        studentDto.setPriceGroup(new BigDecimal("2"));
+        studentDto.setCurrency(Currency.EUR);
 
-        when(studentService.saveStudent(any(Student.class))).thenReturn(student);
+        when(studentService.saveStudent(any(StudentDto.class))).thenReturn(studentDto);
 
         mockMvc.perform(post("/students/update/1")
                         .param("firstName", "John")
@@ -170,26 +167,30 @@ class StudentViewControllerTest {
 
     @Test
     void showStudentProfile() throws Exception {
-        Student student = createStudent();
-        student.setCurrency(Currency.USD);
-        student.setPriceIndividual(BigDecimal.TEN);
-        student.setPriceGroup(BigDecimal.ONE);
+        StudentDto studentDto = createStudentDto();
+        studentDto.setCurrency(Currency.USD);
+        studentDto.setPriceIndividual(BigDecimal.TEN);
+        studentDto.setPriceGroup(BigDecimal.ONE);
 
-        when(studentService.getStudentById(1L)).thenReturn(student);
+        when(studentService.getStudentById(1L)).thenReturn(studentDto);
         when(balanceService.getAllBalancesForStudent(1L)).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/students/profile/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/student-profile"))
-                .andExpect(model().attribute("student", student))
+                .andExpect(model().attribute("student", studentDto))
                 .andExpect(model().attributeExists("balances"));
     }
 
-    private static Student createStudent() {
-        Student student = new Student();
+    private static StudentDto createStudentDto() {
+        StudentDto student = new StudentDto();
         student.setId(1L);
         student.setFirstName("John");
         student.setLastName("Doe");
+        student.setPriceIndividual(BigDecimal.valueOf(50.00));
+        student.setPriceGroup(BigDecimal.valueOf(30.00));
+        student.setCurrency(Currency.USD);
+        student.setActive(true);
         return student;
     }
 }

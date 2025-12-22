@@ -27,24 +27,24 @@ public class StudentViewController {
 
     @GetMapping("/new")
     public String showAddStudentForm(Model model) {
-        model.addAttribute("student", new Student());
+        model.addAttribute("student", new StudentDto());
         model.addAttribute("currencies", Currency.values());
         return "student/add-student";
     }
 
     @PostMapping("/create")
-    public String createStudent(@Valid @ModelAttribute Student student, BindingResult bindingResult, Model model) {
+    public String createStudent(@Valid @ModelAttribute("student") StudentDto studentDto, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("currencies", Currency.values());
             return "student/add-student";
         }
-        studentService.saveStudent(student);
+        studentService.saveStudent(studentDto);
         return "redirect:/students/list";
     }
 
     @GetMapping("/list")
     public String showStudentList(@RequestParam(value = "showInactive", defaultValue = "false") boolean showInactive, Model model) {
-        List<Student> students;
+        List<StudentDto> students;
         if (showInactive) {
             students = studentService.getAllStudentsIncludingInactive();
         }
@@ -76,27 +76,27 @@ public class StudentViewController {
 
     @GetMapping("/edit/{id}")
     public String showEditStudentForm(@PathVariable Long id, Model model) {
-        Student student = studentService.getStudentById(id);
-        model.addAttribute("student", student);
+        StudentDto studentDto = studentService.getStudentById(id);
+        model.addAttribute("student", studentDto);
         model.addAttribute("currencies", Currency.values());
         return "student/edit-student";
     }
 
     @PostMapping("/update/{id}")
-    public String updateStudent(@PathVariable Long id, @Valid @ModelAttribute("student") Student student, BindingResult bindingResult, Model model) {
+    public String updateStudent(@PathVariable Long id, @Valid @ModelAttribute("student") StudentDto studentDto, BindingResult bindingResult, Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("currencies", Currency.values());
             return "student/edit-student";
         }
-        student.setId(id);
-        studentService.saveStudent(student);
+        studentDto.setId(id);
+        studentService.saveStudent(studentDto);
         return "redirect:/students/profile/{id}";
     }
 
     @GetMapping("/profile/{id}")
     public String showStudentProfile(@PathVariable Long id, Model model) {
-        Student student = studentService.getStudentById(id);
-        model.addAttribute("student", student);
+        StudentDto studentDto = studentService.getStudentById(id); // Returns StudentDto
+        model.addAttribute("student", studentDto); // Add DTO
         model.addAttribute("balances", balanceService.getAllBalancesForStudent(id));
         return "student/student-profile";
     }

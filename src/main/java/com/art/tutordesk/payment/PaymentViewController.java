@@ -1,6 +1,6 @@
 package com.art.tutordesk.payment;
 
-import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -87,7 +87,7 @@ public class PaymentViewController {
     }
 
     private void populateFormModel(Model model, PaymentDto paymentDto) {
-        List<Student> students = studentService.getAllActiveStudents();
+        List<StudentDto> students = studentService.getAllActiveStudents();
         model.addAttribute("payment", paymentDto);
         model.addAttribute("students", students);
         model.addAttribute("paymentMethods", PaymentMethod.values());

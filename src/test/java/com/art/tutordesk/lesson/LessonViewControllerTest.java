@@ -3,7 +3,9 @@ package com.art.tutordesk.lesson;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.service.LessonService;
+import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
+import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +13,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.Set;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -130,17 +134,17 @@ class LessonViewControllerTest {
 
     @Test
     void editLessonForm() throws Exception {
-        Student student = new Student();
-        student.setId(1L);
+        Student studentEntity = new Student();
+        studentEntity.setId(1L);
         LessonStudent lessonStudent = new LessonStudent();
-        lessonStudent.setStudent(student);
+        lessonStudent.setStudent(studentEntity);
 
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
-        lesson.setLessonStudents(Collections.singleton(lessonStudent));
+        lesson.setLessonStudents(Set.of(lessonStudent));
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(student));
+        when(studentService.getAllActiveStudents()).thenReturn(Collections.singletonList(createStudentDto(1L)));
 
         mockMvc.perform(get("/lessons/edit/1"))
                 .andExpect(status().isOk())
@@ -203,5 +207,17 @@ class LessonViewControllerTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"))
                 .andExpect(flash().attributeExists("message"));
+    }
+
+    private static StudentDto createStudentDto(Long id) {
+        StudentDto student = new StudentDto();
+        student.setId(id);
+        student.setFirstName("Test");
+        student.setLastName("Student");
+        student.setPriceIndividual(BigDecimal.TEN);
+        student.setPriceGroup(BigDecimal.ONE);
+        student.setCurrency(Currency.USD);
+        student.setActive(true);
+        return student;
     }
 }

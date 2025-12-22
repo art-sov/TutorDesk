@@ -13,10 +13,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -40,41 +36,36 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "First name is mandatory")
-    @Size(max = 50, message = "First name cannot exceed 50 characters")
+    @Column(nullable = false, length = 50)
     private String firstName;
 
-    @Size(max = 50, message = "Last name cannot exceed 50 characters")
+    @Column(length = 50)
     private String lastName;
 
-    @Size(max = 50, message = "Knowledge level cannot exceed 50 characters")
+    @Column(length = 50)
     private String knowledgeLevel; // "A2", "B1", "C1"
 
-    @Size(max = 50, message = "Country cannot exceed 50 characters")
+    @Column(length = 50)
     private String country;
 
-    @Size(max = 50, message = "Phone number cannot exceed 50 characters")
+    @Column(length = 50)
     private String phoneNumber;
 
-    @Column(columnDefinition = "TEXT")
-    @Size(max = 500, message = "Global goal cannot exceed 500 characters")
+    @Column(length = 500)
     private String globalGoal;
+
     private Integer age;
 
-    @NotNull(message = "Individual price is mandatory")
-    @DecimalMin(value = "0.00", message = "Individual price must be non-negative")
     @Column(name = "price_individual", nullable = false)
     private BigDecimal priceIndividual;
 
-    @NotNull(message = "Group price is mandatory")
-    @DecimalMin(value = "0.00", message = "Group price must be non-negative")
     @Column(name = "price_group", nullable = false)
     private BigDecimal priceGroup;
 
-    @NotNull(message = "Currency is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name = "currency", nullable = false)
+    @Column(nullable = false)
     private Currency currency;
+
     private boolean active = true;
 
     @CreatedDate
