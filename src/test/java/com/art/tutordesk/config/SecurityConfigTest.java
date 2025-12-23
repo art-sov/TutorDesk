@@ -11,7 +11,10 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(controllers = SecurityConfig.class)
+@WebMvcTest(controllers = SecurityConfig.class, properties = {
+        "app.admin.username=admin",
+        "app.admin.password=admin123"
+})
 @Import(SecurityConfig.class)
 class SecurityConfigTest {
 
