@@ -22,10 +22,10 @@ public class StudentHardDeleteService {
     @Transactional
     public void performHardDelete(Long studentId) {
         log.info("Starting hard delete for student ID: {}", studentId);
-        // Ensure student exists before trying to delete dependencies
+        // Ensure a student exists before trying to delete dependencies
         studentRepository.findById(studentId)
                 .orElseThrow(() -> {
-                    log.warn("Student not found with id: {} for hard delete.", studentId);
+                    log.error("Student not found with id: {} for hard delete.", studentId);
                     return new RuntimeException("Student not found with id: " + studentId);
                 });
 
