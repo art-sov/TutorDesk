@@ -5,13 +5,17 @@ plugins {
 }
 
 group = 'com.art'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 description = 'TutorDesk is a management app designed for English tutors. It helps streamline scheduling, student tracking, lesson planning, and payment management in one convenient place.'
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+bootJar {
+    archiveFileName = 'tutordesk.jar'
 }
 
 repositories {

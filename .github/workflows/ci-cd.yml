@@ -37,4 +37,29 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tutordesk-app
-          path: build/libs/*.jar
+          path: build/libs/tutordesk.jar
+
+      - name: Copy JAR to Mikrus
+        if: github.ref == 'refs/heads/master'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+            host: ${{ secrets.REMOTE_HOST }}
+            username: ${{ secrets.REMOTE_USER }}
+            password: ${{ secrets.REMOTE_PASSWORD }}
+            port: ${{ secrets.REMOTE_PORT }}
+            source: "build/libs/tutordesk.jar"
+            target: "/home/asovalov/app/"
+            strip_components: 2
+
+      - name: Restart Application on Mikrus
+        if: github.ref == 'refs/heads/master'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+            host: ${{ secrets.REMOTE_HOST }}
+            username: ${{ secrets.REMOTE_USER }}
+            password: ${{ secrets.REMOTE_PASSWORD }}
+            port: ${{ secrets.REMOTE_PORT }}
+            script: |
+              sudo systemctl restart tutordesk.service
+              sleep 2
+              sudo systemctl status tutordesk.service
