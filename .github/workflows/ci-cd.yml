@@ -61,5 +61,5 @@ jobs:
             port: ${{ secrets.REMOTE_PORT }}
             script: |
               sudo systemctl restart tutordesk.service
-              sleep 2
+              sleep 12
               sudo systemctl status tutordesk.service
