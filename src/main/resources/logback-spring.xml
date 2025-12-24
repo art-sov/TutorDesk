@@ -10,6 +10,9 @@
     <!-- Hikari -->
     <logger name="com.zaxxer.hikari" level="INFO"/>
 
+    <logger name="org.springframework.web.servlet.resource.ResourceHttpRequestHandler" level="ERROR"/>
+    <logger name="org.springframework.web.servlet.PageNotFound" level="ERROR"/>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
