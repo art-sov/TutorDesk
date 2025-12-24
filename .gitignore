@@ -36,3 +36,10 @@ out/
 ### VS Code ###
 .vscode/
 /gradlew.bat
+
+### DB ###
+/data/
+
+### Logs ###
+/logs/
+
