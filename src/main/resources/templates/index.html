@@ -7,17 +7,17 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon">
 </head>
-<body class="index-page">
-<div class="logout-container">
-    <form th:action="@{/logout}" method="post" class="d-inline">
-        <button type="submit" class="logout-button">Logout</button>
+<body>
+<div class="position-absolute top-0 end-0 p-3">
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="btn btn-primary">Logout</button>
     </form>
 </div>
 
-<div class="container index-page">
+<div class="container">
     <h1>Welcome to TutorDesk</h1>
     <p class="lead">A simple application to manage your tutoring activities.</p>
-    <hr class="index-page-hr"/>
+    <hr/>
     <div class="d-grid gap-2 col-6 mx-auto mt-4">
         <a href="/students/list" class="btn btn-primary btn-add">Students</a>
         <a href="/lessons/list" class="btn btn-primary btn-add">Lessons</a>
