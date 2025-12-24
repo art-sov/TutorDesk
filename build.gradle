@@ -5,13 +5,17 @@ plugins {
 }
 
 group = 'com.art'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 description = 'TutorDesk is a management app designed for English tutors. It helps streamline scheduling, student tracking, lesson planning, and payment management in one convenient place.'
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
     }
+}
+
+bootJar {
+    archiveFileName = 'tutordesk.jar'
 }
 
 repositories {
@@ -24,6 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.liquibase:liquibase-core'
 
     runtimeOnly 'com.h2database:h2:2.4.240'
 

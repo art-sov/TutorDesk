@@ -1,0 +1,65 @@
+name: Java CI/CD with Gradle
+
+on:
+  push:
+    branches: [ "dev", "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_ADMIN_USERNAME: ${{ secrets.APP_ADMIN_USERNAME }}
+      APP_ADMIN_PASSWORD: ${{ secrets.APP_ADMIN_PASSWORD }}
+      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
+      SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build and Test with Gradle
+        run: ./gradlew build
+
+      - name: Upload Build Artifact
+        if: github.ref == 'refs/heads/master'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tutordesk-app
+          path: build/libs/tutordesk.jar
+
+      - name: Copy JAR to Mikrus
+        if: github.ref == 'refs/heads/master'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+            host: ${{ secrets.REMOTE_HOST }}
+            username: ${{ secrets.REMOTE_USER }}
+            password: ${{ secrets.REMOTE_PASSWORD }}
+            port: ${{ secrets.REMOTE_PORT }}
+            source: "build/libs/tutordesk.jar"
+            target: "/home/asovalov/app/"
+            strip_components: 2
+
+      - name: Restart Application on Mikrus
+        if: github.ref == 'refs/heads/master'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+            host: ${{ secrets.REMOTE_HOST }}
+            username: ${{ secrets.REMOTE_USER }}
+            password: ${{ secrets.REMOTE_PASSWORD }}
+            port: ${{ secrets.REMOTE_PORT }}
+            script: |
+              sudo systemctl restart tutordesk.service
+              sleep 2
+              sudo systemctl status tutordesk.service
