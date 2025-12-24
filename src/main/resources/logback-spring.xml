@@ -4,6 +4,12 @@
 
     <property name="LOG_FILE" value="logs/admin-events.log"/>
 
+    <!-- Hibernate -->
+    <logger name="org.hibernate.orm.connections.pooling" level="ERROR"/>
+
+    <!-- Hikari -->
+    <logger name="com.zaxxer.hikari" level="INFO"/>
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${CONSOLE_LOG_PATTERN}</pattern>
