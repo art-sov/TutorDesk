@@ -20,9 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -65,13 +63,12 @@ class ReportViewControllerTest {
         when(reportService.generateReport(any(LocalDate.class), any(LocalDate.class), anyList(), anyBoolean(), anyBoolean()))
                 .thenReturn(Collections.emptyList());
 
-        mockMvc.perform(post("/reports/generate")
+        mockMvc.perform(get("/reports/generate")
                         .param("startDate", "2025-01-01")
                         .param("endDate", "2025-01-31")
                         .param("selectedStudentIds", "1", "2")
                         .param("includeLessons", "true")
-                        .param("includePayments", "false")
-                        .with(csrf()))
+                        .param("includePayments", "false"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("report/view-report"))
                 .andExpect(model().attributeExists("reportItems"))

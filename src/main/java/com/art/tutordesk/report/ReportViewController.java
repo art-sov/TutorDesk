@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -35,7 +34,7 @@ public class ReportViewController {
         return "report/list-reports";
     }
 
-    @PostMapping("/generate")
+    @GetMapping("/generate")
     public String generateReport(@RequestParam("startDate") LocalDate startDate,
                                  @RequestParam("endDate") LocalDate endDate,
                                  @RequestParam(value = "selectedStudentIds", required = false) List<Long> selectedStudentIds,
