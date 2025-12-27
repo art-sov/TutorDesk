@@ -1,10 +1,10 @@
-package com.art.tutordesk.lesson;
+package com.art.tutordesk.lesson.mapper;
 
+import com.art.tutordesk.lesson.Lesson;
+import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
-import com.art.tutordesk.lesson.mapper.LessonMapper;
-import com.art.tutordesk.lesson.mapper.LessonMapperImpl;
-import com.art.tutordesk.lesson.mapper.LessonStudentMapperImpl;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import org.junit.jupiter.api.BeforeEach;
