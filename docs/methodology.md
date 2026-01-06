@@ -18,7 +18,7 @@ Establish a deterministic, document-driven way to run multi-session, AI-assisted
 1) Read docs in order (authority in §4).
 2) Produce an **Opening Brief** (§12 template).
 3) Plan a ≤1-day slice tied to acceptance criteria.
-4) Implement with diffs/full files ready to paste.
+4) Asc human and after that implement with diffs/full files ready to paste.
 5) Validate: commands + expected results.
 6) Close with a **Closing Report** (§12) and update `handoff.md` (§4 schema).
 
