@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -80,7 +79,6 @@ public class StudentLessonFlowIT {
         // 3. Create a new lesson for this student
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-20")
-                        .param("startTime", "10:00")
                         .param("selectedStudentIds", student.getId().toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
@@ -118,17 +116,14 @@ public class StudentLessonFlowIT {
         // 2. Create three lessons for the student on different dates
         Lesson lesson1 = new Lesson();
         lesson1.setLessonDate(LocalDate.of(2025, 12, 21));
-        lesson1.setStartTime(LocalTime.of(14, 0));
         lessonService.saveLesson(lesson1, List.of(savedStudent.getId()));
 
         Lesson lesson2 = new Lesson();
         lesson2.setLessonDate(LocalDate.of(2025, 12, 22));
-        lesson2.setStartTime(LocalTime.of(14, 0));
         lessonService.saveLesson(lesson2, List.of(savedStudent.getId()));
 
         Lesson lesson3 = new Lesson();
         lesson3.setLessonDate(LocalDate.of(2025, 12, 23));
-        lesson3.setStartTime(LocalTime.of(14, 0));
         lessonService.saveLesson(lesson3, List.of(savedStudent.getId()));
 
         // Verify initial state
@@ -188,7 +183,6 @@ public class StudentLessonFlowIT {
         // 2. Create one group lesson for both students
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-11-15")
-                        .param("startTime", "12:00")
                         .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
@@ -207,7 +201,6 @@ public class StudentLessonFlowIT {
         // 4. Update the lesson to remove student B, making it an individual lesson for student A
         mockMvc.perform(post("/lessons/update/{id}", savedLesson.getId())
                         .param("lessonDate", "2025-11-15")
-                        .param("startTime", "12:00")
                         .param("selectedStudentIds", studentA.getId().toString()) // Only student A remains
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
@@ -244,7 +237,6 @@ public class StudentLessonFlowIT {
         // 2. Create a lesson for the student
         Lesson lesson = new Lesson();
         lesson.setLessonDate(LocalDate.of(2025, 10, 10));
-        lesson.setStartTime(LocalTime.of(15, 0));
         Lesson savedLesson = lessonService.saveLesson(lesson, List.of(student.getId()));
         LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
 
@@ -312,7 +304,6 @@ public class StudentLessonFlowIT {
         // 2. Add a lesson for the student
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-11-20")
-                        .param("startTime", "10:00")
                         .param("selectedStudentIds", studentId.toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());

@@ -45,15 +45,6 @@ public class Student {
     @Column(length = 50)
     private String knowledgeLevel; // "A2", "B1", "C1"
 
-    @Column(length = 50)
-    private String country;
-
-    @Column(length = 50)
-    private String phoneNumber;
-
-    @Column(length = 500)
-    private String globalGoal;
-
     private Integer age;
 
     @Column(name = "price_individual", nullable = false)

@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -74,8 +73,6 @@ class LessonServiceTest {
         lesson1 = new Lesson();
         lesson1.setId(1L);
         lesson1.setLessonDate(LocalDate.now());
-        lesson1.setStartTime(LocalTime.now());
-        lesson1.setTopic("Math");
         lesson1.setLessonStudents(new HashSet<>());
     }
 
@@ -101,8 +98,6 @@ class LessonServiceTest {
         Lesson lesson2 = new Lesson();
         lesson2.setId(2L);
         lesson2.setLessonDate(LocalDate.now().plusDays(1));
-        lesson2.setStartTime(LocalTime.now());
-        lesson2.setTopic("Physics");
         lesson2.setLessonStudents(new HashSet<>());
 
         List<Lesson> lessons = Arrays.asList(lesson1, lesson2);
@@ -267,7 +262,6 @@ class LessonServiceTest {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
         lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
-        lessonToUpdate.setTopic("Updated Topic");
 
         // Setup: existing lesson has one student
         LessonStudent existingLs = createLessonStudent(10L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
@@ -286,7 +280,6 @@ class LessonServiceTest {
     void updateLesson_shouldHandleStudentChangesAndPricing() {
         Lesson lessonToUpdate = new Lesson();
         lessonToUpdate.setId(1L);
-        lessonToUpdate.setTopic("Updated Topic");
 
         // Existing students in the lesson
         Student studentToRemove = student3; // student3 from setUp

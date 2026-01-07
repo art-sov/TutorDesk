@@ -17,7 +17,6 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -58,14 +57,10 @@ public class DataJpaTestSetupTest {
         Lesson lesson1 = entityManager.find(Lesson.class, 1L);
         assertThat(lesson1).isNotNull();
         assertThat(lesson1.getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 1));
-        assertThat(lesson1.getStartTime()).isEqualTo(LocalTime.of(10, 0, 0));
-        assertThat(lesson1.getTopic()).isEqualTo("Group Lesson A");
 
         Lesson lesson2 = entityManager.find(Lesson.class, 2L);
         assertThat(lesson2).isNotNull();
         assertThat(lesson2.getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 2));
-        assertThat(lesson2.getStartTime()).isEqualTo(LocalTime.of(11, 0, 0));
-        assertThat(lesson2.getTopic()).isEqualTo("Group Lesson B");
     }
 
     @Test

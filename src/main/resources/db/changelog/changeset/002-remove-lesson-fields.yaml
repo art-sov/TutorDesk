@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-remove-lesson-fields
+      author: gemini
+      changes:
+        - dropColumn:
+            tableName: lessons
+            columns:
+              - column:
+                  name: start_time
+              - column:
+                  name: topic

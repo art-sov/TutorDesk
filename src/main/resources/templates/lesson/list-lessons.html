@@ -29,8 +29,6 @@
             <thead>
             <tr>
                 <th>Date</th>
-                <th>Time</th>
-                <th>Topic</th>
                 <th>Students</th>
                 <th>Payment Status</th>
             </tr>
@@ -40,8 +38,6 @@
                 th:attr="onclick=|window.location.href='@{/lessons/profile/{id}(id=${lesson.id})}'|"
                 class="clickable-row">
                 <td th:text="${lesson.lessonDate}"></td>
-                <td th:text="${#temporals.format(lesson.startTime, 'HH:mm')}"></td>
-                <td th:text="${lesson.topic}"></td>
                 <td>
                     <div th:each="studentName : ${lesson.studentNames}">
                         <span th:text="${studentName}"></span>

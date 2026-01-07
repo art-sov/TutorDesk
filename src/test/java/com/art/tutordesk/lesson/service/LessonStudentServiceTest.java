@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -86,8 +85,6 @@ class LessonStudentServiceTest {
         Lesson lesson = new Lesson();
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.now());
-        lesson.setStartTime(LocalTime.now());
-        lesson.setTopic("Math");
         return lesson;
     }
 }
