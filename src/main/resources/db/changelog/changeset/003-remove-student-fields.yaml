@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-remove-student-fields
+      author: gemini
+      changes:
+        - dropColumn:
+            tableName: students
+            columns:
+              - column:
+                  name: country
+              - column:
+                  name: phone_number
+              - column:
+                  name: global_goal

@@ -28,15 +28,6 @@ public class StudentDto {
     @Size(max = 50, message = "Knowledge level cannot exceed 50 characters")
     private String knowledgeLevel; // "A2", "B1", "C1"
 
-    @Size(max = 50, message = "Country cannot exceed 50 characters")
-    private String country;
-
-    @Size(max = 50, message = "Phone number cannot exceed 50 characters")
-    private String phoneNumber;
-
-    @Size(max = 500, message = "Global goal cannot exceed 500 characters")
-    private String globalGoal;
-
     @Min(0)
     private Integer age;
 

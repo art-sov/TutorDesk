@@ -32,21 +32,6 @@
             <div th:if="${#fields.hasErrors('knowledgeLevel')}" th:errors="*{knowledgeLevel}" class="invalid-feedback"></div>
         </div>
         <div class="mb-3">
-            <label for="country" class="form-label">Country</label>
-            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('country') ? 'is-invalid' : ''}" id="country" th:field="*{country}" placeholder="Enter country">
-            <div th:if="${#fields.hasErrors('country')}" th:errors="*{country}" class="invalid-feedback"></div>
-        </div>
-        <div class="mb-3">
-            <label for="phoneNumber" class="form-label">Phone Number</label>
-            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('phoneNumber') ? 'is-invalid' : ''}" id="phoneNumber" th:field="*{phoneNumber}" placeholder="Enter phone number">
-            <div th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}" class="invalid-feedback"></div>
-        </div>
-        <div class="mb-3">
-            <label for="globalGoal" class="form-label">Global Goal</label>
-            <textarea class="form-control" th:classappend="${#fields.hasErrors('globalGoal') ? 'is-invalid' : ''}" id="globalGoal" th:field="*{globalGoal}" rows="3" placeholder="Describe the student's goal"></textarea>
-            <div th:if="${#fields.hasErrors('globalGoal')}" th:errors="*{globalGoal}" class="invalid-feedback"></div>
-        </div>
-        <div class="mb-3">
             <label for="priceIndividual" class="form-label">Individual Price per Lesson</label>
             <input type="number" class="form-control" th:classappend="${#fields.hasErrors('priceIndividual') ? 'is-invalid' : ''}" id="priceIndividual" th:field="*{priceIndividual}" placeholder="Enter individual price" step="0.01">
             <div th:if="${#fields.hasErrors('priceIndividual')}" th:errors="*{priceIndividual}" class="invalid-feedback"></div>

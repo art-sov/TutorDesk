@@ -1,10 +1,10 @@
 -- Test data for integration tests
-INSERT INTO students (id, first_name, last_name, knowledge_level, country, price_individual, price_group, currency, active, created_at, updated_at) VALUES
-(1, 'Test', 'Student1', 'B1', 'USA', 25.00, 20.00, 'USD', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
-(2, 'Test', 'Student2', 'C1', 'UK', 30.00, 24.00, 'EUR', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
-(3, 'Test', 'StudentFree', 'A1', 'DE', 0.00, 0.00, 'PLN', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
-(4, 'Test', 'Student4', 'B2', 'USA', 20.00, 18.00, 'USD', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
-(5, 'Test', 'StudentInactive', 'C2', 'FR', 35.00, 30.00, 'EUR', FALSE, '2025-01-01 10:00:00', '2025-01-01 10:00:00');
+INSERT INTO students (id, first_name, last_name, knowledge_level, price_individual, price_group, currency, active, created_at, updated_at) VALUES
+(1, 'Test', 'Student1', 'B1', 25.00, 20.00, 'USD', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
+(2, 'Test', 'Student2', 'C1', 30.00, 24.00, 'EUR', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
+(3, 'Test', 'StudentFree', 'A1', 0.00, 0.00, 'PLN', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
+(4, 'Test', 'Student4', 'B2', 20.00, 18.00, 'USD', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
+(5, 'Test', 'StudentInactive', 'C2', 35.00, 30.00, 'EUR', FALSE, '2025-01-01 10:00:00', '2025-01-01 10:00:00');
 
 INSERT INTO lessons (id, lesson_date) VALUES
 (1, '2025-01-01'),

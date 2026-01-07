@@ -3,3 +3,5 @@ databaseChangeLog:
       file: db/changelog/changeset/001-initial-schema.yaml
   - include:
       file: db/changelog/changeset/002-remove-lesson-fields.yaml
+  - include:
+      file: db/changelog/changeset/003-remove-student-fields.yaml
