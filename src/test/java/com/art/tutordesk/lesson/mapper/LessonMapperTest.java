@@ -14,7 +14,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -60,8 +59,6 @@ public class LessonMapperTest {
         lesson = new Lesson();
         lesson.setId(10L);
         lesson.setLessonDate(LocalDate.of(2025, 1, 15));
-        lesson.setStartTime(LocalTime.of(10, 0));
-        lesson.setTopic("Mathematics");
 
         lessonStudent1 = new LessonStudent();
         lessonStudent1.setId(100L);
@@ -101,8 +98,6 @@ public class LessonMapperTest {
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(lesson.getId());
         assertThat(dto.getLessonDate()).isEqualTo(lesson.getLessonDate());
-        assertThat(dto.getStartTime()).isEqualTo(lesson.getStartTime());
-        assertThat(dto.getTopic()).isEqualTo(lesson.getTopic());
         assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentNames()).containsExactlyInAnyOrder("John Doe", "Jane Smith", "Peter Jones");
     }
@@ -174,8 +169,6 @@ public class LessonMapperTest {
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(lesson.getId());
         assertThat(dto.getLessonDate()).isEqualTo(lesson.getLessonDate());
-        assertThat(dto.getStartTime()).isEqualTo(lesson.getStartTime());
-        assertThat(dto.getTopic()).isEqualTo(lesson.getTopic());
         assertNull(dto.getPaymentStatus());
         assertThat(dto.getStudentAssociations()).hasSize(3); // Should contain all LessonStudents
     }

@@ -6,11 +6,11 @@ INSERT INTO students (id, first_name, last_name, knowledge_level, country, price
 (4, 'Test', 'Student4', 'B2', 'USA', 20.00, 18.00, 'USD', TRUE, '2025-01-01 10:00:00', '2025-01-01 10:00:00'),
 (5, 'Test', 'StudentInactive', 'C2', 'FR', 35.00, 30.00, 'EUR', FALSE, '2025-01-01 10:00:00', '2025-01-01 10:00:00');
 
-INSERT INTO lessons (id, lesson_date, start_time, topic) VALUES
-(1, '2025-01-01', '10:00:00', 'Group Lesson A'),
-(2, '2025-01-02', '11:00:00', 'Group Lesson B'),
-(3, '2025-01-10', '12:00:00', 'Individual Lesson 1'),
-(4, '2025-01-05', '14:00:00', 'Individual Lesson 2');
+INSERT INTO lessons (id, lesson_date) VALUES
+(1, '2025-01-01'),
+(2, '2025-01-02'),
+(3, '2025-01-10'),
+(4, '2025-01-05');
 
 INSERT INTO lesson_student (id, lesson_id, student_id, payment_status, price, currency) VALUES
 (1, 1, 1, 'UNPAID', 25.00, 'USD'),   -- Student 1

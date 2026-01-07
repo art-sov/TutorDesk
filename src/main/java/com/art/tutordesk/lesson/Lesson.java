@@ -32,12 +32,6 @@ public class Lesson {
     @NotNull(message = "Lesson date is mandatory")
     private LocalDate lessonDate;
 
-    @NotNull(message = "Start time is mandatory")
-    private LocalTime startTime;
-
-    @Size(max = 200, message = "Topic cannot exceed 200 characters")
-    private String topic;
-
     @OneToMany(mappedBy = "lesson", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<LessonStudent> lessonStudents = new HashSet<>();
 }

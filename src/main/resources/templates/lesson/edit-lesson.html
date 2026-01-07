@@ -17,17 +17,6 @@
             <input type="date" class="form-control" th:classappend="${#fields.hasErrors('lessonDate') ? 'is-invalid' : ''}" id="lessonDate" th:field="*{lessonDate}" required>
             <div th:if="${#fields.hasErrors('lessonDate')}" th:errors="*{lessonDate}" class="invalid-feedback"></div>
         </div>
-        <div class="mb-3">
-            <label for="startTime" class="form-label">Start Time</label>
-            <input type="time" class="form-control" th:classappend="${#fields.hasErrors('startTime') ? 'is-invalid' : ''}" id="startTime" th:field="*{startTime}" required>
-            <div th:if="${#fields.hasErrors('startTime')}" th:errors="*{startTime}" class="invalid-feedback"></div>
-        </div>
-
-        <div class="mb-3">
-            <label for="topic" class="form-label">Topic</label>
-            <input type="text" class="form-control" th:classappend="${#fields.hasErrors('topic') ? 'is-invalid' : ''}" id="topic" th:field="*{topic}" placeholder="Enter lesson topic">
-            <div th:if="${#fields.hasErrors('topic')}" th:errors="*{topic}" class="invalid-feedback"></div>
-        </div>
 
         <div class="mb-3">
             <label for="students" class="form-label">Select Students</label>

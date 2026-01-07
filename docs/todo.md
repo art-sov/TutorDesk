@@ -1,0 +1,1 @@
+| T-013 | Remove Topic, start time | [Scope §1.4](Scope.md#14-fetcher-goals)     | [Design §1](Design.md#1-high-level-architecture)                          | We don't need Topic, Start time, in lesson entity and DB right now     | @asovalov  | ⚪      | 0%    | TBD            |

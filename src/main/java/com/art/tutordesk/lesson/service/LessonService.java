@@ -62,9 +62,8 @@ public class LessonService {
     @Transactional
     public Lesson saveLesson(Lesson lesson, List<Long> selectedStudentIds) {
         Lesson savedLesson = lessonRepository.save(lesson);
-        log.info("Lesson created: {id={}, date={}, startTime={}, topic={}} with {} students.",
-                savedLesson.getId(), savedLesson.getLessonDate(), savedLesson.getStartTime(),
-                savedLesson.getTopic(), selectedStudentIds != null ? selectedStudentIds.size() : 0);
+        log.info("Lesson created: {id={}, date={}} with {} students.",
+                savedLesson.getId(), savedLesson.getLessonDate(), selectedStudentIds != null ? selectedStudentIds.size() : 0);
         List<Student> students = associateStudentsWithLesson(savedLesson, selectedStudentIds, Map.of());
         students.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
         return savedLesson;
@@ -78,9 +77,8 @@ public class LessonService {
                     return new RuntimeException("Lesson not found for update with id: " + lesson.getId());
                 });
 
-        log.info("Updating lesson {}: from date={} topic='{}' to date={} topic='{}'",
-                lesson.getId(), existingLesson.getLessonDate(), existingLesson.getTopic(),
-                lesson.getLessonDate(), lesson.getTopic());
+        log.info("Updating lesson {}: from date={} to date={}",
+                lesson.getId(), existingLesson.getLessonDate(), lesson.getLessonDate());
 
         Set<Student> allAffectedStudents = new HashSet<>();
         existingLesson.getLessonStudents().forEach(ls -> allAffectedStudents.add(ls.getStudent()));
@@ -97,8 +95,6 @@ public class LessonService {
                 balanceService.changeBalance(ls.getStudent().getId(), ls.getCurrency(), ls.getPrice()));
 
         existingLesson.setLessonDate(lesson.getLessonDate());
-        existingLesson.setStartTime(lesson.getStartTime());
-        existingLesson.setTopic(lesson.getTopic());
 
         existingLesson.getLessonStudents().clear();
         lessonRepository.flush(); // Ensure the removal is processed before adding new associations
@@ -155,8 +151,8 @@ public class LessonService {
             log.warn("Lesson not found for deletion with id: {}", id);
             return new RuntimeException("Lesson not found for deletion with id: " + id);
         });
-        log.info("Deleting lesson: {id={}, date={}, startTime={}, topic='{}'}",
-                lesson.getId(), lesson.getLessonDate(), lesson.getStartTime(), lesson.getTopic());
+        log.info("Deleting lesson: {id={}, date={}}",
+                lesson.getId(), lesson.getLessonDate());
 
         Set<Student> affectedStudents = lesson.getLessonStudents().stream()
                 .map(LessonStudent::getStudent)

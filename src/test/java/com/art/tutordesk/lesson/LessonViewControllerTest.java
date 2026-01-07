@@ -18,7 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -91,7 +90,6 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-25")
-                        .param("startTime", "10:00")
                         .param("selectedStudentIds", "1", "2")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
@@ -105,7 +103,6 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-25")
-                        .param("startTime", "10:00")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/add-lesson"))
@@ -118,10 +115,10 @@ class LessonViewControllerTest {
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/lessons/create")
-                        .param("selectedStudentIds", "1").with(csrf())) // Missing date and time
+                        .param("selectedStudentIds", "1").with(csrf())) // Missing date
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/add-lesson"))
-                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate", "startTime"));
+                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate"));
     }
 
     @Test
@@ -129,7 +126,6 @@ class LessonViewControllerTest {
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.now());
-        lesson.setStartTime(LocalTime.now());
         lesson.setStudentAssociations(Collections.emptyList());
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
@@ -164,7 +160,6 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
-                        .param("startTime", "11:00")
                         .param("selectedStudentIds", "1")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
@@ -183,7 +178,6 @@ class LessonViewControllerTest {
 
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
-                        .param("startTime", "11:00")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/edit-lesson"))
@@ -201,10 +195,10 @@ class LessonViewControllerTest {
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/lessons/update/1")
-                        .param("selectedStudentIds", "1").with(csrf())) // missing date/time
+                        .param("selectedStudentIds", "1").with(csrf())) // missing date
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/edit-lesson"))
-                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate", "startTime"));
+                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate"));
     }
 
     @Test
