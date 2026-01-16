@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-add-attendance-status
+      author: gemini
+      changes:
+        - addColumn:
+            tableName: lesson_student
+            columns:
+              - column:
+                  name: attendance_status
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+                  defaultValue: 'PRESENT'

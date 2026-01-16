@@ -49,6 +49,7 @@ public class LessonStudentMapperTest {
         assertEquals(dto.getCurrency(), lessonStudent.getCurrency());
         assertEquals(dto.getPrice(), lessonStudent.getPrice());
         assertEquals(dto.getPaymentStatus(), lessonStudent.getPaymentStatus());
+        assertEquals(dto.getAttendanceStatus(), lessonStudent.getAttendanceStatus());
     }
 
     @Test

@@ -15,7 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -29,9 +31,11 @@ class LessonStudentServiceTest {
 
     @Mock
     private LessonStudentRepository lessonStudentRepository;
+
     @InjectMocks
     private LessonStudentService lessonStudentService;
 
+    private LessonStudent lessonStudent;
     private Student student;
     private Lesson lesson;
 
@@ -39,14 +43,12 @@ class LessonStudentServiceTest {
     void setUp() {
         student = createStudent();
         lesson = createLesson();
+        lessonStudent = createStudentLesson();
     }
 
     @Test
     void save_shouldSaveLessonStudent() {
-        LessonStudent lessonStudent = new LessonStudent();
-        lessonStudent.setLesson(lesson);
-        lessonStudent.setId(1L);
-        lessonStudent.setStudent(student);
+
 
         when(lessonStudentRepository.save(any(LessonStudent.class))).thenReturn(lessonStudent);
 
@@ -70,6 +72,29 @@ class LessonStudentServiceTest {
         assertNull(result.getPrice()); // Price should not be set by this service
     }
 
+    @Test
+    void findByLessonIdAndStudentId_whenFound_shouldReturnLessonStudent() {
+        Long lessonId = 1L;
+        Long studentId = 1L;
+        when(lessonStudentRepository.findByLessonIdAndStudentId(lessonId, studentId)).thenReturn(Optional.of(lessonStudent));
+
+        Optional<LessonStudent> result = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get()).isEqualTo(lessonStudent);
+    }
+
+    @Test
+    void findByLessonIdAndStudentId_whenNotFound_shouldReturnEmpty() {
+        Long lessonId = 2L;
+        Long studentId = 2L;
+        when(lessonStudentRepository.findByLessonIdAndStudentId(lessonId, studentId)).thenReturn(Optional.empty());
+
+        Optional<LessonStudent> result = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId);
+
+        assertThat(result).isNotPresent();
+    }
+
     private Student createStudent() {
         Student student1 = new Student();
         student1.setId(1L);
@@ -86,5 +111,13 @@ class LessonStudentServiceTest {
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.now());
         return lesson;
+    }
+
+    private LessonStudent createStudentLesson() {
+        LessonStudent lessonStudent = new LessonStudent();
+        lessonStudent.setId(1L);
+        lessonStudent.setLesson(lesson);
+        lessonStudent.setStudent(student);
+        return lessonStudent;
     }
 }

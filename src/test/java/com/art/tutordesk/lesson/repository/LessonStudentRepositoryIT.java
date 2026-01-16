@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -144,5 +145,27 @@ public class LessonStudentRepositoryIT {
 
         assertThat(currencies).isNotNull();
         assertThat(currencies).isEmpty();
+    }
+
+    @Test
+    void findByLessonIdAndStudentId_shouldReturnLessonStudent_whenFound() {
+        Long lessonId = 1L;
+        Long studentId = 1L;
+
+        Optional<LessonStudent> result = lessonStudentRepository.findByLessonIdAndStudentId(lessonId, studentId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getLesson().getId()).isEqualTo(lessonId);
+        assertThat(result.get().getStudent().getId()).isEqualTo(studentId);
+    }
+
+    @Test
+    void findByLessonIdAndStudentId_shouldReturnEmptyOptional_whenNotFound() {
+        Long nonExistentLessonId = 99L;
+        Long nonExistentStudentId = 99L;
+
+        Optional<LessonStudent> result = lessonStudentRepository.findByLessonIdAndStudentId(nonExistentLessonId, nonExistentStudentId);
+
+        assertThat(result).isNotPresent();
     }
 }

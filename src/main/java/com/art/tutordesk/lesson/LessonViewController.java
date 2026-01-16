@@ -1,5 +1,7 @@
 package com.art.tutordesk.lesson;
 
+import com.art.tutordesk.lesson.dto.AttendanceUpdateRequest;
+import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
@@ -7,6 +9,7 @@ import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.service.StudentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
@@ -15,13 +18,17 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -127,5 +134,17 @@ public class LessonViewController {
         lessonService.deleteLesson(id);
         redirectAttributes.addFlashAttribute("message", "Lesson deleted successfully!");
         return "redirect:/lessons/list";
+    }
+
+    @ResponseBody
+    @PostMapping("/{lessonId}/students/{studentId}/attendance")
+    public ResponseEntity<Map<String, Object>> updateAttendance(@PathVariable Long lessonId,
+                                                                @PathVariable Long studentId,
+                                                                @RequestBody AttendanceUpdateRequest request) {
+        AttendanceUpdateResponse serviceResponse = lessonService.updateAttendance(lessonId, studentId, request.getStatus());
+        Map<String, Object> response = new HashMap<>();
+        response.put("newPrice", serviceResponse.getNewPrice());
+        response.put("newPaymentStatus", serviceResponse.getNewPaymentStatus());
+        return ResponseEntity.ok(response);
     }
 }

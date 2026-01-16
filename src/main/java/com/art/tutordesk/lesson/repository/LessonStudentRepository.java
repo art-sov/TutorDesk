@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -34,4 +35,6 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
 
     @Query("SELECT DISTINCT ls.currency FROM LessonStudent ls WHERE ls.student.id = :studentId")
     Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
+
+    Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId);
 }

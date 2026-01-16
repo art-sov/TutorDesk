@@ -5,7 +5,8 @@
 - The architecture has been successfully refactored from an event-driven model to a more straightforward direct service-call architecture.
 - A comprehensive testing suite is in place, covering unit, integration (`@DataJpaTest`, `@WebMvcTest`), and complete end-to-end business flows (`StudentLessonFlowIT`).
 - The entire development lifecycle is automated via a GitHub Actions CI/CD pipeline, which builds, tests, and deploys the application to production.
-- Current project focus has shifted from major feature development to ensuring robustness through extensive testing and minor UI/UX enhancements.
+- The current project focus has shifted from major feature development to ensuring robustness through extensive testing and minor UI/UX enhancements.
+- The view `lesson-profile.html` use JavaScript to dynamically update the attended status of a students.
 
 ## Active Task(s)
 - No active tasks.
@@ -16,18 +17,15 @@
 - **Standardized Integration Testing:** Adopted a two-pronged testing strategy: integration flow tests (`StudentLessonFlowIT`) run on a clean, empty database, while individual repository tests (`*RepositoryIT`) use a pre-populated dataset (`data-test.sql`) for consistency. (link: Design.md §2)
 
 ## Changes Since Last Session
-- Completed T-001: Standardize Project Documentation.
-- Completed T-007: Added JaCoCo Test Coverage Reporting and configured CI/CD pipeline.
-This session focused on documentation and process alignment. Key changes from *previous development sessions* include:
-- `src/test/java/.../integrationtest/StudentLessonFlowIT.java`: Added end-to-end tests for core business scenarios (student lifecycle, payment reconciliation, deletions).
-- `src/test/java/.../repository/*IT.java`: Implemented full `@DataJpaTest` coverage for all data repositories.
-- `src/test/java/.../*ViewControllerTest.java`: Implemented full `@WebMvcTest` coverage for all view controllers.
-- `src/main/java/.../balance/BalanceService.java`: Refactored to consolidate all balance update logic.
-- `src/main/java/.../config/JpaAuditingConfig.java`: Created to resolve Spring context conflicts between JPA and `@WebMvcTest`.
-- `Design.md`, `Scope.md`: Created to establish canonical project documentation.
+- Completed T-015: Implement the ability to calculate the cost of a group lesson if a student misses the lesson
+This session focused on implementing new business logic and unit tests.
+- `src/main/java/.../lesson/LessonViewController.java`: Add new logic for attendance end-point.
+- `src/main/java/.../lesson/LessonService.java`: Add new logic for update attendance of students.
+- `src/main/java/.../lesson/PaymentStatusUtil.java`: Change logic for calculating payment status with absent students.
+- `src/test/java/**`: Add new tests for attendance logic.
 
 ## Validation & Evidence
-- **Unit & Integration Tests:** 177/177 passed.
+- **Unit & Integration Tests:** 193/193 passed.
 - **Build Status:** `BUILD SUCCESSFUL`
 - **Coverage:** JaCoCo reports generated and verified (≥80% lines, ≥75% branches on included classes).
 - **Logs/Artifacts:** Build and test results are available in the GitHub Actions workflow logs for the current commit. JaCoCo XML and HTML reports are uploaded as build artifacts. The production application log is located at `logs/admin-events.log` on the target server.
