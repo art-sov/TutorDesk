@@ -22,6 +22,7 @@
                 <th>Type</th>
                 <th>Date</th>
                 <th>Value</th>
+                <th>Payment Status</th>
             </tr>
             </thead>
             <tbody>
@@ -31,6 +32,12 @@
                 <td th:text="${item.itemType}"></td>
                 <td th:text="${#temporals.format(item.date, 'dd-MM-yyyy')}"></td>
                 <td><span th:text="${item.currency.symbol}"></span><span th:text="${#numbers.formatDecimal(item.amount, 1, 2)}"></span></td>
+                <td>
+                    <span th:if="${item.itemType.name() == 'LESSON' and item.paymentStatus != null}"
+                          th:text="${item.paymentStatus.name()}"
+                          th:classappend="${'status-' + item.paymentStatus.name().toLowerCase()}">
+                    </span>
+                </td>
             </tr>
             <tr th:if="${#lists.isEmpty(reportItems)}">
                 <td colspan="5" class="text-center">No data for the selected period.</td>

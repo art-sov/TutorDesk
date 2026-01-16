@@ -1,5 +1,6 @@
 package com.art.tutordesk.report;
 
+import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
 import lombok.Builder;
 import lombok.Data;
@@ -15,6 +16,7 @@ public class ReportItemDto {
     private Currency currency;
     private BigDecimal amount;
     private LocalDate date;
+    private PaymentStatus paymentStatus;
 
     public enum ItemType {
         LESSON, PAYMENT

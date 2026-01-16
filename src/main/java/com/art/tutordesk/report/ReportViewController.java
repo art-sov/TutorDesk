@@ -31,6 +31,12 @@ public class ReportViewController {
         model.addAttribute("activeStudentsCount", reportService.getActiveStudentsCount());
         model.addAttribute("totalPayments", reportService.getTotalPaymentsThisMonth());
 
+        // Set default dates for the report filter
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.withDayOfMonth(1);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+
         return "report/list-reports";
     }
 
