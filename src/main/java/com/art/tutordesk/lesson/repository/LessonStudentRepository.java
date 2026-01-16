@@ -26,8 +26,9 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
             @Param("endDate") LocalDate endDate,
             @Param("studentIds") List<Long> studentIds);
 
-    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
-            Student student, com.art.tutordesk.payment.Currency currency, PaymentStatus paymentStatus);
+    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(Student student,
+                                                                                                 Currency currency,
+                                                                                                 PaymentStatus paymentStatus);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")

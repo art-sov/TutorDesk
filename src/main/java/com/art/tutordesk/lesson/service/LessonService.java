@@ -127,11 +127,11 @@ public class LessonService {
             PaymentStatus paymentStatus = existingStatuses.getOrDefault(student.getId(), PaymentStatus.UNPAID);
             LessonStudent lessonStudent = lessonStudentService.buildLessonStudent(student, lesson, paymentStatus);
 
-            java.math.BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
+            BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
             lessonStudent.setPrice(price);
             lessonStudent.setCurrency(student.getCurrency()); // Ensure currency is set
 
-            if (price.compareTo(java.math.BigDecimal.ZERO) == 0) {
+            if (price.compareTo(BigDecimal.ZERO) == 0) {
                 lessonStudent.setPaymentStatus(PaymentStatus.FREE);
             } else {
                 lessonStudent.setPaymentStatus(paymentStatus);
