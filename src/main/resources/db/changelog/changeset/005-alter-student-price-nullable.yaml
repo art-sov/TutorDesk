@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260116-005
+      author: art-sov
+      changes:
+        - dropNotNullConstraint:
+            tableName: students
+            columnName: price_group
+            columnDataType: NUMERIC(38,2)
+        - dropNotNullConstraint:
+            tableName: students
+            columnName: price_individual
+            columnDataType: NUMERIC(38,2)

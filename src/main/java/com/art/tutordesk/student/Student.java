@@ -47,10 +47,10 @@ public class Student {
 
     private Integer age;
 
-    @Column(name = "price_individual", nullable = false)
+    @Column(name = "price_individual")
     private BigDecimal priceIndividual;
 
-    @Column(name = "price_group", nullable = false)
+    @Column(name = "price_group")
     private BigDecimal priceGroup;
 
     @Enumerated(EnumType.STRING)

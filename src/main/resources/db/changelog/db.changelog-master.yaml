@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changeset/003-remove-student-fields.yaml
   - include:
       file: db/changelog/changeset/004-add-attendance-status.yaml
+  - include:
+      file: db/changelog/changeset/005-alter-student-price-nullable.yaml

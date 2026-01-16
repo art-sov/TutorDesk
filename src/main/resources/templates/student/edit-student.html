@@ -52,8 +52,10 @@
             </select>
             <div th:if="${#fields.hasErrors('currency')}" th:errors="*{currency}" class="invalid-feedback"></div>
         </div>
-        <button type="submit" class="btn btn-primary">Update Student</button>
-        <a href="/students/list" class="btn-secondary">Cancel</a>
+                    <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+                        <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Student</button>        <a href="/students/list" class="btn-secondary">Cancel</a>
     </form>
 </div>
 </body>

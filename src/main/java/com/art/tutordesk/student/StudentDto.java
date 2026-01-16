@@ -1,6 +1,7 @@
 package com.art.tutordesk.student;
 
 import com.art.tutordesk.payment.Currency;
+import com.art.tutordesk.student.validation.AtLeastOnePriceNotNull;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@AtLeastOnePriceNotNull
 public class StudentDto {
     private Long id;
 
@@ -31,11 +33,9 @@ public class StudentDto {
     @Min(0)
     private Integer age;
 
-    @NotNull(message = "Individual price is mandatory")
     @DecimalMin(value = "0.00", message = "Individual price must be non-negative")
     private BigDecimal priceIndividual;
 
-    @NotNull(message = "Group price is mandatory")
     @DecimalMin(value = "0.00", message = "Group price must be non-negative")
     private BigDecimal priceGroup;
 

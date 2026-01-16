@@ -6,7 +6,7 @@
 - A comprehensive testing suite is in place, covering unit, integration (`@DataJpaTest`, `@WebMvcTest`), and complete end-to-end business flows (`StudentLessonFlowIT`).
 - The entire development lifecycle is automated via a GitHub Actions CI/CD pipeline, which builds, tests, and deploys the application to production.
 - The current project focus has shifted from major feature development to ensuring robustness through extensive testing and minor UI/UX enhancements.
-- The view `lesson-profile.html` use JavaScript to dynamically update the attended status of a students.
+- The view `lesson-profile.html` use JavaScript to dynamically update the attended status of a student.
 
 ## Active Task(s)
 - No active tasks.
@@ -14,7 +14,7 @@
 ## Decisions Made
 - **Refactored to Direct Service Calls:** The initial event-driven architecture for balance updates was removed in favor of direct service calls to simplify logic and improve traceability. (link: Design.md §1)
 - **Consolidated Balance Logic:** Created a single, generic `BalanceService.changeBalance` method to handle all balance modifications, reducing code duplication. (link: Design.md §3)
-- **Standardized Integration Testing:** Adopted a two-pronged testing strategy: integration flow tests (`StudentLessonFlowIT`) run on a clean, empty database, while individual repository tests (`*RepositoryIT`) use a pre-populated dataset (`data-test.sql`) for consistency. (link: Design.md §2)
+- **Standardized Integration Testing:** Adopted a two-pronged testing strategy: integration flow tests (`StudentLessonFlowIT`, `AttendanceFlowIT`) run on a clean, empty database, while individual repository tests (`*RepositoryIT`) use a pre-populated dataset (`data-test.sql`) for consistency. (link: Design.md §2)
 
 ## Changes Since Last Session
 - Completed T-015: Implement the ability to calculate the cost of a group lesson if a student misses the lesson
@@ -23,6 +23,12 @@ This session focused on implementing new business logic and unit tests.
 - `src/main/java/.../lesson/LessonService.java`: Add new logic for update attendance of students.
 - `src/main/java/.../lesson/PaymentStatusUtil.java`: Change logic for calculating payment status with absent students.
 - `src/test/java/**`: Add new tests for attendance logic.
+- **Refactored and fixed integration tests in `AttendanceFlowIT.java` to use dynamically created IDs for students and lessons, ensuring robustness and reliability across all test scenarios.**
+- Completed T-017: Change field validation in add-student
+This session involved updating the database schema and UI.
+- `src/main/resources/db/changelog/changeset/005-alter-student-price-nullable.yaml`: Created a new Liquibase changeset to drop NOT NULL constraints for `price_group` and `price_individual` columns in the `students` table.
+- `src/main/resources/db/changelog/db.changelog-master.yaml`: Included the new changeset in the master changelog.
+- `src/main/resources/templates/student/student-profile.html`: Modified to conditionally display individual and group prices only if they are not null.
 
 ## Validation & Evidence
 - **Unit & Integration Tests:** 193/193 passed.
