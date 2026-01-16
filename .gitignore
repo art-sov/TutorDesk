@@ -43,3 +43,6 @@ out/
 ### Logs ###
 /logs/
 
+### AI docs ###
+/ai-docs/
+
