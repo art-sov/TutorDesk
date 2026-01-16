@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Repository
@@ -25,8 +26,9 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
             @Param("endDate") LocalDate endDate,
             @Param("studentIds") List<Long> studentIds);
 
-    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
-            Student student, com.art.tutordesk.payment.Currency currency, PaymentStatus paymentStatus);
+    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(Student student,
+                                                                                                 Currency currency,
+                                                                                                 PaymentStatus paymentStatus);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")
@@ -34,4 +36,6 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
 
     @Query("SELECT DISTINCT ls.currency FROM LessonStudent ls WHERE ls.student.id = :studentId")
     Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
+
+    Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId);
 }

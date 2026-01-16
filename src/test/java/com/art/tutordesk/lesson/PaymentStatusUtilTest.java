@@ -17,9 +17,10 @@ class PaymentStatusUtilTest {
         paymentStatusUtil = new PaymentStatusUtil();
     }
 
-    private LessonStudent createLessonStudent(PaymentStatus status) {
+    private LessonStudent createLessonStudent(PaymentStatus status, AttendanceStatus attendanceStatus) {
         LessonStudent lessonStudent = new LessonStudent();
         lessonStudent.setPaymentStatus(status);
+        lessonStudent.setAttendanceStatus(attendanceStatus);
         return lessonStudent;
     }
 
@@ -32,78 +33,105 @@ class PaymentStatusUtilTest {
     @Test
     void testCalculateWithAllStudentsFree_ShouldReturnFree() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.FREE));
-        students.add(createLessonStudent(PaymentStatus.FREE));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.FREE, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithAllStudentsPaid_ShouldReturnPaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.PAID));
-        students.add(createLessonStudent(PaymentStatus.PAID));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithAllStudentsUnpaid_ShouldReturnUnpaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.UNPAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithPaidAndFreeStudents_ShouldReturnPaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.PAID));
-        students.add(createLessonStudent(PaymentStatus.FREE));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithUnpaidAndFreeStudents_ShouldReturnUnpaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
-        students.add(createLessonStudent(PaymentStatus.FREE));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.UNPAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithPaidAndUnpaidStudents_ShouldReturnPartiallyPaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.PAID));
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.PARTIALLY_PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithPaidUnpaidAndFreeStudents_ShouldReturnPartiallyPaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.PAID));
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
-        students.add(createLessonStudent(PaymentStatus.FREE));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.PARTIALLY_PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithSinglePaidStudent_ShouldReturnPaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.PAID));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithSingleUnpaidStudent_ShouldReturnUnpaid() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.UNPAID));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.UNPAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
 
     @Test
     void testCalculateWithSingleFreeStudent_ShouldReturnFree() {
         Set<LessonStudent> students = new HashSet<>();
-        students.add(createLessonStudent(PaymentStatus.FREE));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
         assertEquals(PaymentStatus.FREE, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
     }
+
+    @Test
+    void testCalculateWithAllStudentsAbsent_ShouldReturnPaid() {
+        Set<LessonStudent> students = new HashSet<>();
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.ABSENT));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.ABSENT));
+        assertEquals(PaymentStatus.PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
+    }
+
+    @Test
+    void testCalculateWithMixedAttendanceAndPaymentStatuses_ShouldIgnoreAbsentStudents() {
+        Set<LessonStudent> students = new HashSet<>();
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.ABSENT));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.PRESENT));
+        assertEquals(PaymentStatus.PARTIALLY_PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
+    }
+
+    @Test
+    void testCalculateWithMixedAttendanceAndPaymentStatuses_AllPresentStudentsPaidOrFree_ShouldReturnPaid() {
+        Set<LessonStudent> students = new HashSet<>();
+        students.add(createLessonStudent(PaymentStatus.UNPAID, AttendanceStatus.ABSENT));
+        students.add(createLessonStudent(PaymentStatus.PAID, AttendanceStatus.PRESENT));
+        students.add(createLessonStudent(PaymentStatus.FREE, AttendanceStatus.PRESENT));
+        assertEquals(PaymentStatus.PAID, paymentStatusUtil.calculateAndSetLessonPaymentStatus(students));
+    }
+
 }

@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,5 +36,9 @@ public class LessonStudentService {
         lessonStudent.setCurrency(student.getCurrency());
         log.debug("LessonStudent built for student {} lesson {}.", student.getId(), lesson.getId());
         return lessonStudent;
+    }
+
+    public Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId) {
+        return lessonStudentRepository.findByLessonIdAndStudentId(lessonId, studentId);
     }
 }

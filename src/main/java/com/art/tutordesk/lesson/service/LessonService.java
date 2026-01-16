@@ -1,13 +1,15 @@
 package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.balance.BalanceService;
+import com.art.tutordesk.lesson.AttendanceStatus;
 import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.PaymentStatusUtil;
+import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -24,9 +27,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class LessonService {
 
     private final LessonRepository lessonRepository;
@@ -124,11 +127,11 @@ public class LessonService {
             PaymentStatus paymentStatus = existingStatuses.getOrDefault(student.getId(), PaymentStatus.UNPAID);
             LessonStudent lessonStudent = lessonStudentService.buildLessonStudent(student, lesson, paymentStatus);
 
-            java.math.BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
+            BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
             lessonStudent.setPrice(price);
             lessonStudent.setCurrency(student.getCurrency()); // Ensure currency is set
 
-            if (price.compareTo(java.math.BigDecimal.ZERO) == 0) {
+            if (price.compareTo(BigDecimal.ZERO) == 0) {
                 lessonStudent.setPaymentStatus(PaymentStatus.FREE);
             } else {
                 lessonStudent.setPaymentStatus(paymentStatus);
@@ -167,6 +170,45 @@ public class LessonService {
 
         // After deletion, resync the status for all affected students
         affectedStudents.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
+    }
+
+    @Transactional
+    public AttendanceUpdateResponse updateAttendance(Long lessonId, Long studentId, AttendanceStatus newStatus) {
+        LessonStudent lessonStudent = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId)
+                .orElseThrow(() -> new RuntimeException("LessonStudent association not found for lesson " + lessonId + " and student " + studentId));
+
+        if (lessonStudent.getAttendanceStatus() == newStatus) {
+            return new AttendanceUpdateResponse(lessonStudent.getPrice(), lessonStudent.getPaymentStatus().name()); // No change needed
+        }
+
+        BigDecimal oldPrice = lessonStudent.getPrice();
+        BigDecimal newPrice;
+
+        Student student = lessonStudent.getStudent();
+        boolean isGroupLesson = lessonStudent.getLesson().getLessonStudents().size() > 1;
+
+        if (newStatus == AttendanceStatus.ABSENT) {
+            newPrice = BigDecimal.ZERO;
+        } else {
+            newPrice = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
+        }
+
+        lessonStudent.setAttendanceStatus(newStatus);
+        lessonStudent.setPrice(newPrice);
+        lessonStudentService.save(lessonStudent);
+
+        BigDecimal priceDifference = newPrice.subtract(oldPrice);
+
+        balanceService.changeBalance(student.getId(), lessonStudent.getCurrency(), priceDifference.negate());
+        balanceService.resyncPaymentStatus(student.getId());
+
+        LessonStudent updatedLessonStudent = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId)
+                .orElseThrow(() -> new RuntimeException("Could not re-fetch LessonStudent after update"));
+
+        log.info("Updated attendance for student {} in lesson {} to {}. Price changed from {} to {}. New payment status: {}",
+                studentId, lessonId, newStatus, oldPrice, newPrice, updatedLessonStudent.getPaymentStatus().name());
+
+        return new AttendanceUpdateResponse(newPrice, updatedLessonStudent.getPaymentStatus().name());
     }
 }
 
