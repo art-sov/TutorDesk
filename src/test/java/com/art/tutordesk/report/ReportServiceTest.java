@@ -36,13 +36,10 @@ class ReportServiceTest {
 
     @Mock
     private LessonRepository lessonRepository;
-
     @Mock
     private StudentRepository studentRepository;
-
     @Mock
     private PaymentRepository paymentRepository;
-
     @Mock
     private LessonStudentRepository lessonStudentRepository;
 
@@ -252,5 +249,39 @@ class ReportServiceTest {
         assertTrue(report.isEmpty());
         verify(lessonStudentRepository, times(1)).findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
         verify(paymentRepository, times(1)).findByFilters(startDate, endDate, studentIds);
+    }
+
+    @Test
+    void generateReport_ExcludesAbsentStudents() {
+        LocalDate startDate = LocalDate.of(2025, 1, 1);
+        LocalDate endDate = LocalDate.of(2025, 1, 31);
+        List<Long> studentIds = Collections.singletonList(1L);
+
+        Lesson lesson1 = new Lesson();
+        lesson1.setId(1L);
+        lesson1.setLessonDate(LocalDate.of(2025, 1, 10));
+
+        LessonStudent presentLessonStudent = new LessonStudent();
+        presentLessonStudent.setStudent(student1);
+        presentLessonStudent.setLesson(lesson1);
+        presentLessonStudent.setPrice(BigDecimal.valueOf(50));
+        presentLessonStudent.setCurrency(Currency.USD);
+        presentLessonStudent.setAttendanceStatus(com.art.tutordesk.lesson.AttendanceStatus.PRESENT);
+
+        LessonStudent absentLessonStudent = new LessonStudent();
+        absentLessonStudent.setStudent(student1);
+        absentLessonStudent.setLesson(lesson1);
+        absentLessonStudent.setPrice(BigDecimal.valueOf(50));
+        absentLessonStudent.setCurrency(Currency.USD);
+        absentLessonStudent.setAttendanceStatus(com.art.tutordesk.lesson.AttendanceStatus.ABSENT);
+
+        when(lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds))
+                .thenReturn(Arrays.asList(presentLessonStudent, absentLessonStudent));
+
+        List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, true, false);
+
+        assertEquals(1, report.size());
+        assertEquals("John Doe", report.getFirst().getStudentName());
+        assertEquals(com.art.tutordesk.report.ReportItemDto.ItemType.LESSON, report.getFirst().getItemType());
     }
 }

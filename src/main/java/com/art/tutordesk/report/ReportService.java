@@ -1,5 +1,6 @@
 package com.art.tutordesk.report;
 
+import com.art.tutordesk.lesson.AttendanceStatus;
 import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
@@ -64,6 +65,7 @@ public class ReportService {
             List<LessonStudent> lessons = lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
             log.debug("Found {} lessons for report criteria.", lessons.size());
             lessons.stream()
+                    .filter(ls -> ls.getAttendanceStatus() == AttendanceStatus.PRESENT)
                     .map(ls -> ReportItemDto.builder()
                             .studentName(ls.getStudent().getFirstName() + " " + ls.getStudent().getLastName())
                             .itemType(ReportItemDto.ItemType.LESSON)
