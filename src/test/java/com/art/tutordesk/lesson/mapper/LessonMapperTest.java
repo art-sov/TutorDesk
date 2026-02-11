@@ -2,7 +2,6 @@ package com.art.tutordesk.lesson.mapper;
 
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.payment.Currency;
@@ -64,7 +63,6 @@ public class LessonMapperTest {
         lessonStudent1.setId(100L);
         lessonStudent1.setLesson(lesson);
         lessonStudent1.setStudent(student1);
-        lessonStudent1.setPaymentStatus(PaymentStatus.PAID);
         lessonStudent1.setPrice(student1.getPriceIndividual());
         lessonStudent1.setCurrency(student1.getCurrency());
 
@@ -72,7 +70,6 @@ public class LessonMapperTest {
         lessonStudent2.setId(101L);
         lessonStudent2.setLesson(lesson);
         lessonStudent2.setStudent(student2);
-        lessonStudent2.setPaymentStatus(PaymentStatus.UNPAID);
         lessonStudent2.setPrice(student2.getPriceIndividual());
         lessonStudent2.setCurrency(student2.getCurrency());
 
@@ -80,7 +77,6 @@ public class LessonMapperTest {
         lessonStudent3.setId(102L);
         lessonStudent3.setLesson(lesson);
         lessonStudent3.setStudent(student3);
-        lessonStudent3.setPaymentStatus(PaymentStatus.FREE);
         lessonStudent3.setPrice(student3.getPriceIndividual());
         lessonStudent3.setCurrency(student3.getCurrency());
     }
@@ -118,7 +114,7 @@ public class LessonMapperTest {
     void toLessonListDTO_withAllFreeStudents_shouldMapCorrectly() {
         Set<LessonStudent> lessonStudents = new HashSet<>();
         lessonStudents.add(lessonStudent3); // FREE
-        lessonStudents.add(createLessonStudent(lesson, createStudent(BigDecimal.ZERO), PaymentStatus.FREE));
+        lessonStudents.add(createLessonStudent(lesson, createStudent(BigDecimal.ZERO)));
         lesson.setLessonStudents(lessonStudents);
 
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
@@ -132,7 +128,7 @@ public class LessonMapperTest {
     void toLessonListDTO_withAllPaidStudents_shouldMapCorrectly() {
         Set<LessonStudent> lessonStudents = new HashSet<>();
         lessonStudents.add(lessonStudent1); // PAID
-        lessonStudents.add(createLessonStudent(lesson, createStudent(new BigDecimal("70.00")), PaymentStatus.PAID));
+        lessonStudents.add(createLessonStudent(lesson, createStudent(new BigDecimal("70.00"))));
         lesson.setLessonStudents(lessonStudents);
 
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
@@ -146,7 +142,7 @@ public class LessonMapperTest {
     void toLessonListDTO_withAllUnpaidStudents_shouldMapCorrectly() {
         Set<LessonStudent> lessonStudents = new HashSet<>();
         lessonStudents.add(lessonStudent2); // UNPAID
-        lessonStudents.add(createLessonStudent(lesson, createStudent(new BigDecimal("70.00")), PaymentStatus.UNPAID));
+        lessonStudents.add(createLessonStudent(lesson, createStudent(new BigDecimal("70.00"))));
         lesson.setLessonStudents(lessonStudents);
 
         LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
@@ -220,11 +216,10 @@ public class LessonMapperTest {
         return student;
     }
 
-    private LessonStudent createLessonStudent(Lesson lesson, Student student, PaymentStatus paymentStatus) {
+    private LessonStudent createLessonStudent(Lesson lesson, Student student) {
         LessonStudent ls = new LessonStudent();
         ls.setLesson(lesson);
         ls.setStudent(student);
-        ls.setPaymentStatus(paymentStatus);
         ls.setPrice(student.getPriceIndividual());
         ls.setCurrency(student.getCurrency());
         return ls;

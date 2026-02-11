@@ -1,6 +1,8 @@
 package com.art.tutordesk.payment;
 
-import com.art.tutordesk.balance.BalanceService;
+import com.art.tutordesk.balance.BalanceTransactionService;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +38,7 @@ public class PaymentServiceTest {
     @Mock
     private PaymentRepository paymentRepository;
     @Mock
-    private BalanceService balanceService;
+    private BalanceTransactionService balanceTransactionService;
     @Mock
     private PaymentMapper paymentMapper;
     @Mock
@@ -145,7 +147,7 @@ public class PaymentServiceTest {
     }
 
     @Test
-    void createPayment_shouldSavePaymentAndUpdateBalance() {
+    void createPayment_shouldSavePaymentAndCreateBalanceTransaction() {
         when(paymentMapper.toPayment(any(PaymentDto.class))).thenReturn(payment1);
         when(studentService.getStudentEntityById(student.getId())).thenReturn(student);
         when(paymentRepository.save(payment1)).thenReturn(payment1);
@@ -158,14 +160,19 @@ public class PaymentServiceTest {
         verify(paymentMapper, times(1)).toPayment(any(PaymentDto.class));
         verify(studentService, times(1)).getStudentEntityById(student.getId());
         verify(paymentRepository, times(1)).save(payment1);
-        verify(balanceService, times(1)).changeBalance(
-                student.getId(), payment1.getCurrency(), payment1.getAmount());
-        verify(balanceService, times(1)).resyncPaymentStatus(student.getId());
+        verify(balanceTransactionService, times(1)).createBalanceTransaction( // Verify balance transaction
+                eq(student),
+                eq(TransactionType.PAYMENT_RECEIVED),
+                eq(payment1.getCurrency()),
+                eq(TransactionSource.PAYMENT),
+                eq(payment1.getAmount()),
+                eq(payment1.getId())
+        );
         verify(paymentMapper, times(1)).toPaymentDto(payment1);
     }
 
     @Test
-    void updatePayment_shouldUpdatePaymentAndBalance() {
+    void updatePayment_shouldUpdatePaymentAndCreateBalanceTransaction() {
         PaymentDto updatedPaymentDto = new PaymentDto();
         updatedPaymentDto.setId(100L);
         updatedPaymentDto.setStudentId(student.getId());
@@ -195,10 +202,16 @@ public class PaymentServiceTest {
         verify(studentService, times(1)).getStudentEntityById(student.getId());
         verify(paymentRepository, times(1)).save(payment1);
 
-        ArgumentCaptor<BigDecimal> deltaCaptor = ArgumentCaptor.forClass(BigDecimal.class);
-        verify(balanceService, times(1)).changeBalance(eq(student.getId()), eq(Currency.USD), deltaCaptor.capture());
-        assertEquals(new BigDecimal("10.00"), deltaCaptor.getValue());
-        verify(balanceService, times(1)).resyncPaymentStatus(student.getId());
+        ArgumentCaptor<BigDecimal> amountCaptor = ArgumentCaptor.forClass(BigDecimal.class);
+        verify(balanceTransactionService, times(1)).createBalanceTransaction(
+                eq(student),
+                eq(TransactionType.PAYMENT_UPDATED),
+                eq(Currency.USD),
+                eq(TransactionSource.PAYMENT),
+                amountCaptor.capture(),
+                eq(updatedPaymentEntity.getId())
+        );
+        assertEquals(new BigDecimal("10.00"), amountCaptor.getValue());
         verify(paymentMapper, times(1)).toPaymentDto(updatedPaymentEntity);
     }
 
@@ -214,25 +227,29 @@ public class PaymentServiceTest {
         assertEquals("Payment not found for update with id: 999", exception.getMessage());
         verify(paymentRepository, times(1)).findById(999L);
         verify(paymentMapper, never()).updatePaymentFromDto(any(PaymentDto.class), any(Payment.class));
-        verify(studentService, never()).getStudentById(anyLong());
+        verify(studentService, never()).getStudentEntityById(anyLong()); // Updated to exact method
         verify(paymentRepository, never()).save(any(Payment.class));
-        verify(balanceService, never()).changeBalance(anyLong(), any(Currency.class), any(BigDecimal.class));
-        verify(balanceService, never()).resyncPaymentStatus(anyLong());
+        verify(balanceTransactionService, never()).createBalanceTransaction(any(Student.class), any(), any(), any(), any(), anyLong());
         verify(paymentMapper, never()).toPaymentDto(any(Payment.class));
     }
 
     @Test
-    void deletePayment_shouldDeletePaymentAndBalance() {
+    void deletePayment_shouldDeletePaymentAndCreateBalanceTransaction() {
         when(paymentRepository.findById(100L)).thenReturn(Optional.of(payment1));
         doNothing().when(paymentRepository).deleteById(100L);
 
         paymentService.deletePayment(100L);
 
         verify(paymentRepository, times(1)).findById(100L);
-        verify(balanceService, times(1)).changeBalance(
-                student.getId(), payment1.getCurrency(), payment1.getAmount().negate());
+        verify(balanceTransactionService, times(1)).createBalanceTransaction(
+                eq(student),
+                eq(TransactionType.PAYMENT_DELETED),
+                eq(payment1.getCurrency()),
+                eq(TransactionSource.PAYMENT),
+                eq(payment1.getAmount().negate()),
+                eq(payment1.getId())
+        );
         verify(paymentRepository, times(1)).deleteById(100L);
-        verify(balanceService, times(1)).resyncPaymentStatus(student.getId());
     }
 
     @Test
@@ -245,7 +262,6 @@ public class PaymentServiceTest {
         assertEquals("Payment not found for deletion with id: 999", exception.getMessage());
         verify(paymentRepository, times(1)).findById(999L);
         verify(paymentRepository, never()).deleteById(anyLong());
-        verify(balanceService, never()).changeBalance(anyLong(), any(Currency.class), any(BigDecimal.class));
-        verify(balanceService, never()).resyncPaymentStatus(anyLong());
+        verify(balanceTransactionService, never()).createBalanceTransaction(any(Student.class), any(), any(), any(), any(), anyLong());
     }
 }

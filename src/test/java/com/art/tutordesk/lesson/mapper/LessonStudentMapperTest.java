@@ -1,7 +1,6 @@
 package com.art.tutordesk.lesson.mapper;
 
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
@@ -35,7 +34,6 @@ public class LessonStudentMapperTest {
         lessonStudent.setStudent(student);
         lessonStudent.setPrice(BigDecimal.valueOf(40));
         lessonStudent.setCurrency(Currency.USD);
-        lessonStudent.setPaymentStatus(PaymentStatus.UNPAID);
     }
 
     @Test
@@ -48,7 +46,6 @@ public class LessonStudentMapperTest {
         assertEquals(dto.getId(), lessonStudent.getId());
         assertEquals(dto.getCurrency(), lessonStudent.getCurrency());
         assertEquals(dto.getPrice(), lessonStudent.getPrice());
-        assertEquals(dto.getPaymentStatus(), lessonStudent.getPaymentStatus());
         assertEquals(dto.getAttendanceStatus(), lessonStudent.getAttendanceStatus());
     }
 
