@@ -38,7 +38,7 @@ public class StudentViewController {
             model.addAttribute("currencies", Currency.values());
             return "student/add-student";
         }
-        studentService.saveStudent(studentDto);
+        studentService.createStudent(studentDto);
         return "redirect:/students/list";
     }
 
@@ -89,7 +89,7 @@ public class StudentViewController {
             return "student/edit-student";
         }
         studentDto.setId(id);
-        studentService.saveStudent(studentDto);
+        studentService.updateStudent(studentDto);
         return "redirect:/students/profile/{id}";
     }
 

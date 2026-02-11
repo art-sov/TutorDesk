@@ -1,5 +1,8 @@
 package com.art.tutordesk.student.service;
 
+import com.art.tutordesk.balance.BalanceTransactionService;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentDto;
@@ -42,6 +45,8 @@ class StudentServiceTest {
     private StudentHardDeleteService studentHardDeleteService;
     @Mock
     private StudentMapper studentMapper;
+    @Mock
+    private BalanceTransactionService balanceTransactionService;
 
     @InjectMocks
     private StudentService studentService;
@@ -71,35 +76,45 @@ class StudentServiceTest {
     }
 
     @Test
-    void saveStudent_shouldSaveNewStudent() {
+    void createStudent_shouldCreateNewStudent() {
         StudentDto newStudentDto = createStudentDto(null, "New", "Student", true);
         Student newStudentEntity = new Student();
         newStudentEntity.setFirstName(newStudentDto.getFirstName());
         newStudentEntity.setLastName(newStudentDto.getLastName());
         newStudentEntity.setActive(true);
         newStudentEntity.setId(10L);
+        newStudentEntity.setCurrency(newStudentDto.getCurrency());
 
         when(studentMapper.toStudent(newStudentDto)).thenReturn(newStudentEntity);
         when(studentRepository.save(any(Student.class))).thenReturn(newStudentEntity);
         when(studentMapper.toStudentDto(newStudentEntity)).thenReturn(newStudentDto);
 
-        StudentDto result = studentService.saveStudent(newStudentDto);
+        StudentDto result = studentService.createStudent(newStudentDto);
 
         assertNotNull(result);
         assertEquals(newStudentDto.getFirstName(), result.getFirstName());
         verify(studentMapper, times(1)).toStudent(newStudentDto);
         verify(studentRepository, times(1)).save(newStudentEntity);
         verify(studentMapper, times(1)).toStudentDto(newStudentEntity);
+        verify(balanceTransactionService, times(1)).createBalanceTransaction(
+                eq(newStudentEntity),
+                eq(TransactionType.STUDENT_CREATED),
+                eq(newStudentEntity.getCurrency()),
+                eq(TransactionSource.STUDENT),
+                eq(BigDecimal.ZERO),
+                eq(newStudentEntity.getId())
+        );
     }
 
     @Test
-    void saveStudent_shouldUpdateExistingStudent() {
+    void updateStudent_shouldUpdateExistingStudent_whenCurrencyNotChanged() {
         StudentDto existingStudentDto = createStudentDto(1L, "Updated", "Name", true);
         Student existingStudentEntity = new Student();
         existingStudentEntity.setId(1L);
         existingStudentEntity.setFirstName("John");
         existingStudentEntity.setLastName("Doe");
         existingStudentEntity.setActive(true);
+        existingStudentEntity.setCurrency(Currency.USD);
 
         when(studentRepository.findById(1L)).thenReturn(Optional.of(existingStudentEntity));
         doAnswer(invocation -> {
@@ -112,7 +127,7 @@ class StudentServiceTest {
         when(studentRepository.save(existingStudentEntity)).thenReturn(existingStudentEntity);
         when(studentMapper.toStudentDto(existingStudentEntity)).thenReturn(existingStudentDto);
 
-        StudentDto result = studentService.saveStudent(existingStudentDto);
+        StudentDto result = studentService.updateStudent(existingStudentDto); // Call updateStudent
 
         assertNotNull(result);
         assertEquals(existingStudentDto.getFirstName(), result.getFirstName());
@@ -120,6 +135,56 @@ class StudentServiceTest {
         verify(studentMapper, times(1)).updateStudentFromDto(eq(existingStudentDto), any(Student.class));
         verify(studentRepository, times(1)).save(existingStudentEntity);
         verify(studentMapper, times(1)).toStudentDto(existingStudentEntity);
+        verify(balanceTransactionService, never()).createBalanceTransaction(any(), any(), any(), any(), any(), anyLong());
+    }
+
+    @Test
+    void updateStudent_shouldUpdateExistingStudent_whenCurrencyChanged() {
+        StudentDto existingStudentDto = createStudentDto(1L, "Updated", "Name", true);
+        existingStudentDto.setCurrency(Currency.EUR); // New currency
+
+        Student existingStudentEntity = new Student();
+        existingStudentEntity.setId(1L);
+        existingStudentEntity.setFirstName("John");
+        existingStudentEntity.setLastName("Doe");
+        existingStudentEntity.setActive(true);
+        existingStudentEntity.setCurrency(Currency.USD);
+
+        Student updatedStudentEntity = new Student();
+        updatedStudentEntity.setId(1L);
+        updatedStudentEntity.setFirstName("Updated");
+        updatedStudentEntity.setLastName("Name");
+        updatedStudentEntity.setActive(true);
+        updatedStudentEntity.setCurrency(Currency.EUR);
+
+        when(studentRepository.findById(1L)).thenReturn(Optional.of(existingStudentEntity));
+        doAnswer(invocation -> {
+            Student target = invocation.getArgument(1);
+            target.setFirstName(existingStudentDto.getFirstName());
+            target.setLastName(existingStudentDto.getLastName());
+            target.setActive(existingStudentDto.isActive());
+            target.setCurrency(existingStudentDto.getCurrency());
+            return null;
+        }).when(studentMapper).updateStudentFromDto(eq(existingStudentDto), any(Student.class));
+        when(studentRepository.save(existingStudentEntity)).thenReturn(updatedStudentEntity);
+        when(studentMapper.toStudentDto(updatedStudentEntity)).thenReturn(existingStudentDto);
+
+        StudentDto result = studentService.updateStudent(existingStudentDto);
+
+        assertNotNull(result);
+        assertEquals(existingStudentDto.getCurrency(), result.getCurrency());
+        verify(studentRepository, times(1)).findById(1L);
+        verify(studentMapper, times(1)).updateStudentFromDto(eq(existingStudentDto), any(Student.class));
+        verify(studentRepository, times(1)).save(existingStudentEntity);
+        verify(studentMapper, times(1)).toStudentDto(updatedStudentEntity);
+        verify(balanceTransactionService, times(1)).createBalanceTransaction(
+                eq(updatedStudentEntity),
+                eq(TransactionType.STUDENT_UPDATED),
+                eq(updatedStudentEntity.getCurrency()),
+                eq(TransactionSource.STUDENT),
+                eq(BigDecimal.ZERO),
+                eq(updatedStudentEntity.getId())
+        );
     }
 
     @Test
@@ -200,6 +265,7 @@ class StudentServiceTest {
     void hardDeleteStudent_shouldCallHardDeleteService() {
         studentService.hardDeleteStudent(student1.getId());
 
+        verify(balanceTransactionService, times(1)).deleteTransactionsByStudentId(student1.getId());
         verify(studentHardDeleteService, times(1)).performHardDelete(student1.getId());
     }
 

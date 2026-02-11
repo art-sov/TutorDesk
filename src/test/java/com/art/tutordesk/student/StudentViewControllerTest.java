@@ -51,7 +51,7 @@ class StudentViewControllerTest {
     void createStudent_whenValid() throws Exception {
         StudentDto studentDto = createStudentDto();
 
-        when(studentService.saveStudent(any(StudentDto.class))).thenReturn(studentDto);
+        when(studentService.createStudent(any(StudentDto.class))).thenReturn(studentDto);
 
         mockMvc.perform(post("/students/create")
                         .param("firstName", "John")
@@ -155,7 +155,7 @@ class StudentViewControllerTest {
         studentDto.setPriceGroup(new BigDecimal("2"));
         studentDto.setCurrency(Currency.EUR);
 
-        when(studentService.saveStudent(any(StudentDto.class))).thenReturn(studentDto);
+        when(studentService.createStudent(any(StudentDto.class))).thenReturn(studentDto);
 
         mockMvc.perform(post("/students/update/1")
                         .param("firstName", "John")
