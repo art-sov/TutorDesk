@@ -1,5 +1,6 @@
 package com.art.tutordesk.student.service;
 
+import com.art.tutordesk.balance.BalanceQueryService;
 import com.art.tutordesk.balance.BalanceTransactionService;
 import com.art.tutordesk.balance.TransactionSource;
 import com.art.tutordesk.balance.TransactionType;
@@ -27,6 +28,7 @@ public class StudentService {
     private final StudentHardDeleteService studentHardDeleteService;
     private final StudentMapper studentMapper;
     private final BalanceTransactionService balanceTransactionService;
+    private final BalanceQueryService balanceQueryService;
 
     @Transactional
     public StudentDto createStudent(StudentDto studentDto) {
@@ -116,7 +118,9 @@ public class StudentService {
 
     public StudentDto getStudentById(Long studentId) {
         Student student = getStudentEntityById(studentId);
-        return studentMapper.toStudentDto(student);
+        StudentDto studentDto = studentMapper.toStudentDto(student);
+        studentDto.setBalances(balanceQueryService.getAllBalancesForStudent(studentId));
+        return studentDto;
     }
 
     // Helper method to get Student entity, internal to service

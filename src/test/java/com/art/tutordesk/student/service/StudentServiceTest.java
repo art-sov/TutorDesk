@@ -1,5 +1,6 @@
 package com.art.tutordesk.student.service;
 
+import com.art.tutordesk.balance.BalanceQueryService;
 import com.art.tutordesk.balance.BalanceTransactionService;
 import com.art.tutordesk.balance.TransactionSource;
 import com.art.tutordesk.balance.TransactionType;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,6 +49,8 @@ class StudentServiceTest {
     private StudentMapper studentMapper;
     @Mock
     private BalanceTransactionService balanceTransactionService;
+    @Mock
+    private BalanceQueryService balanceQueryService;
 
     @InjectMocks
     private StudentService studentService;
@@ -295,6 +299,7 @@ class StudentServiceTest {
     void getStudentById_shouldReturnStudent_whenFound() {
         when(studentRepository.findById(anyLong())).thenReturn(Optional.of(student1));
         when(studentMapper.toStudentDto(student1)).thenReturn(studentDto1);
+        when(balanceQueryService.getAllBalancesForStudent(anyLong())).thenReturn(Map.of(Currency.USD, BigDecimal.valueOf(100)));
 
         StudentDto result = studentService.getStudentById(student1.getId());
 

@@ -1,8 +1,8 @@
 package com.art.tutordesk.report;
 
 import com.art.tutordesk.lesson.AttendanceStatus;
-import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.Payment;
@@ -72,7 +72,6 @@ public class ReportService {
                             .currency(ls.getCurrency())
                             .amount(ls.getPrice())
                             .date(ls.getLesson().getLessonDate())
-                            .paymentStatus(ls.getPaymentStatus())
                             .build())
                     .forEach(reportItems::add);
         }

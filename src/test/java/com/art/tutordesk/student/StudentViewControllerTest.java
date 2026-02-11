@@ -1,6 +1,5 @@
 package com.art.tutordesk.student;
 
-import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.service.StudentService;
@@ -35,8 +34,6 @@ class StudentViewControllerTest {
     private MockMvc mockMvc;
     @MockitoBean
     private StudentService studentService;
-    @MockitoBean
-    private BalanceService balanceService;
 
     @Test
     void showAddStudentForm() throws Exception {
@@ -186,13 +183,11 @@ class StudentViewControllerTest {
         studentDto.setPriceGroup(BigDecimal.ONE);
 
         when(studentService.getStudentById(1L)).thenReturn(studentDto);
-        when(balanceService.getAllBalancesForStudent(1L)).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/students/profile/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("student/student-profile"))
-                .andExpect(model().attribute("student", studentDto))
-                .andExpect(model().attributeExists("balances"));
+                .andExpect(model().attribute("student", studentDto));
     }
 
     private static StudentDto createStudentDto() {

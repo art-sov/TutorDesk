@@ -8,7 +8,10 @@ import java.util.List;
 
 @Repository
 public interface BalanceTransactionRepository extends JpaRepository<BalanceTransaction, Long> {
-    List<BalanceTransaction> findByStudentIdAndCurrencyOrderByTransactionDateTimeDesc(Long studentId, Currency currency);
 
     void deleteByStudentId(Long studentId);
+
+    List<BalanceTransaction> findByStudentIdAndCurrency(Long studentId, Currency currency);
+
+    List<BalanceTransaction> findByStudentId(Long studentId);
 }

@@ -12,6 +12,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -41,5 +42,8 @@ public class StudentDto {
 
     @NotNull(message = "Currency is mandatory")
     private Currency currency;
+
     private boolean active = true;
+
+    private Map<Currency, BigDecimal> balances;
 }
