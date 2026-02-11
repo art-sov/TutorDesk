@@ -9,3 +9,9 @@ databaseChangeLog:
       file: db/changelog/changeset/004-add-attendance-status.yaml
   - include:
       file: db/changelog/changeset/005-alter-student-price-nullable.yaml
+  - include:
+      file: db/changelog/changeset/006-create-balance-transactions.yaml
+  - include:
+      file: db/changelog/changeset/007-populate-balance-transactions.yaml
+  - include:
+      file: db/changelog/changeset/008-drop-payment-status-from-lesson-student.yaml

@@ -1,0 +1,21 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-populate-balance-transactions
+      author: art-sov
+      changes:
+        - sql:
+            dbms: postgresql, h2
+            splitStatements: true
+            stripComments: true
+            endDelimiter: ";"
+            sql: |
+              INSERT INTO balance_transactions (student_id, transaction_datetime, type, amount, currency, source_entity, source_id)
+              SELECT
+                  sb.student_id,
+                  NOW(),
+                  'BALANCE_MIGRATION',
+                  sb.amount,
+                  sb.currency,
+                  'SYSTEM',
+                  sb.id
+              FROM student_balance sb;

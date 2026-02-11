@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 008-drop-payment-status-from-lesson-student
+      author: art-sov
+      changes:
+        - dropColumn:
+            tableName: lesson_student
+            columns:
+              - column:
+                  name: payment_status
