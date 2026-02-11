@@ -12,13 +12,13 @@ INSERT INTO lessons (id, lesson_date) VALUES
 (3, '2025-01-10'),
 (4, '2025-01-05');
 
-INSERT INTO lesson_student (id, lesson_id, student_id, payment_status, price, currency) VALUES
-(1, 1, 1, 'UNPAID', 25.00, 'USD'),   -- Student 1
-(2, 1, 2, 'UNPAID', 30.00, 'EUR'),   -- Student 2
-(3, 2, 3, 'FREE', 0.00, 'PLN'),     -- Student 3
-(4, 2, 4, 'UNPAID', 20.00, 'USD'),   -- Student 4
-(5, 3, 1, 'PAID', 25.00, 'USD'),     -- Student 1, future lesson, PAID
-(6, 4, 1, 'UNPAID', 30.00, 'EUR');    -- Student 1, past lesson, different currency
+INSERT INTO lesson_student (id, lesson_id, student_id, price, currency) VALUES
+(1, 1, 1, 25.00, 'USD'),   -- Student 1
+(2, 1, 2, 30.00, 'EUR'),   -- Student 2
+(3, 2, 3, 0.00, 'PLN'),     -- Student 3
+(4, 2, 4, 20.00, 'USD'),   -- Student 4
+(5, 3, 1, 25.00, 'USD'),     -- Student 1, future lesson
+(6, 4, 1, 30.00, 'EUR');    -- Student 1, past lesson, different currency
 
 INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency, created_at, updated_at) VALUES
 (1, '2024-12-20', 1, 'CARD', 10.00, 'USD', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Old payment for Student 1
@@ -28,10 +28,5 @@ INSERT INTO payments (id, payment_date, student_id, payment_method, amount, curr
 (5, '2025-01-15', 5, 'CASH', 30.00, 'EUR', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Payment for inactive student
 (6, '2025-02-01', 2, 'CARD', 25.00, 'EUR', '2025-01-01 10:00:00', '2025-01-01 10:00:00'); -- Future payment for Student 2
 
-INSERT INTO student_balance (id, student_id, amount, currency, last_updated_at) VALUES
-(1, 1, -5.00, 'USD', '2025-01-01 10:00:00'),
-(2, 2, 10.00, 'EUR', '2025-01-01 10:00:00'),
-(3, 3, 0.00, 'PLN', '2025-01-01 10:00:00'),
-(4, 4, -10.00, 'USD', '2025-01-01 10:00:00'),
-(5, 5, 30.00, 'EUR', '2025-01-01 10:00:00'),
-(6, 1, -3.00, 'EUR', '2025-01-01 10:00:00'); -- Student 1 also has a EUR balance
+INSERT INTO balance_transactions (id, student_id, transaction_datetime, type, amount, currency, source_entity, source_id) VALUES
+(1, 1, '2025-01-01 10:00:00', 'STUDENT_CREATED', 0.00, 'USD', 'STUDENT', 1)
