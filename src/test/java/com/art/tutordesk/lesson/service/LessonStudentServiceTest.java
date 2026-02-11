@@ -2,7 +2,6 @@ package com.art.tutordesk.lesson.service;
 
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
@@ -60,14 +59,11 @@ class LessonStudentServiceTest {
 
     @Test
     void buildLessonStudent_shouldCorrectlyBuildObjectAndSetCurrency() {
-        PaymentStatus paymentStatus = PaymentStatus.UNPAID;
-
-        LessonStudent result = lessonStudentService.buildLessonStudent(student, lesson, paymentStatus);
+        LessonStudent result = lessonStudentService.buildLessonStudent(student, lesson);
 
         assertNotNull(result);
         assertEquals(lesson, result.getLesson());
         assertEquals(student, result.getStudent());
-        assertEquals(paymentStatus, result.getPaymentStatus());
         assertEquals(student.getCurrency(), result.getCurrency());
         assertNull(result.getPrice()); // Price should not be set by this service
     }
