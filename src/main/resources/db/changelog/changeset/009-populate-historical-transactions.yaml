@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - description: migrate historical transaction from lesson_student and payment table
+  - changeSet:
+      id: 010-populate-historical-transactions
+      author: art-sov
+      changes:
+        #Insert LESSON_CHARGE for historically completed lessons that had a price > 0
+        #Use lesson_date from the lesson table for transaction_datetime
+        - sql: |
+            INSERT INTO balance_transactions (student_id, type, amount, currency, source_entity, source_id, transaction_datetime)
+            SELECT ls.student_id, 'LESSON_CHARGE', -ls.price, ls.currency, 'LESSON', ls.id, l.lesson_date
+            FROM lesson_student ls
+            JOIN lessons l ON ls.lesson_id = l.id
+            WHERE ls.status = 'COMPLETED' AND ls.price > 0;
+        #Insert PAYMENT_RECEIVED for existing payment records
+        #Use payment_date from the payment table for transaction_datetime
+        - sql: |
+            INSERT INTO balance_transactions (student_id, type, amount, currency, source_entity, source_id, transaction_datetime)
+            SELECT p.student_id, 'PAYMENT_RECEIVED', p.amount, p.currency, 'PAYMENT', p.id, p.payment_date
+            FROM payments p;
