@@ -12,6 +12,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/changeset/006-create-balance-transactions.yaml
   - include:
-      file: db/changelog/changeset/007-populate-balance-transactions.yaml
+      file: db/changelog/changeset/007-add-lesson-student-new-status-column.yaml
   - include:
-      file: db/changelog/changeset/008-drop-payment-status-from-lesson-student.yaml
+      file: db/changelog/changeset/008-populate-lesson-student-new-status.yaml
+  - include:
+      file: db/changelog/changeset/009-populate-historical-transactions.yaml

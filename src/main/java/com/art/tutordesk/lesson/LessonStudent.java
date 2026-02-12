@@ -41,6 +41,10 @@ public class LessonStudent {
 
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private LessonStudentStatus status = LessonStudentStatus.SCHEDULED;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "attendance_status", nullable = false)
     private AttendanceStatus attendanceStatus = AttendanceStatus.PRESENT;
 
