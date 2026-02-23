@@ -43,8 +43,6 @@ public class StudentDto {
     @NotNull(message = "Currency is mandatory")
     private Currency currency;
 
-    private String currencySymbol;
-
     private boolean active = true;
 
     private Map<Currency, BigDecimal> balances;

@@ -38,4 +38,8 @@ public class LessonStudentService {
     public Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId) {
         return lessonStudentRepository.findByLessonIdAndStudentId(lessonId, studentId);
     }
+
+    public void delete(LessonStudent ls) {
+        lessonStudentRepository.delete(ls);
+    }
 }
