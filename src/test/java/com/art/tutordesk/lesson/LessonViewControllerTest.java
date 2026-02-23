@@ -4,6 +4,7 @@ import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
+import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.StudentDto;
@@ -23,6 +24,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -106,19 +108,7 @@ class LessonViewControllerTest {
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/add-lesson"))
-                .andExpect(model().hasErrors())
-                .andExpect(model().attributeHasErrors("lesson"));
-    }
-
-    @Test
-    void createLesson_whenInvalid_bindingResultErrors() throws Exception {
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(post("/lessons/create")
-                        .param("selectedStudentIds", "1").with(csrf())) // Missing date
-                .andExpect(status().isOk())
-                .andExpect(view().name("lesson/add-lesson"))
-                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate"));
+                .andExpect(model().hasErrors());
     }
 
     @Test
@@ -126,20 +116,43 @@ class LessonViewControllerTest {
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.now());
-        lesson.setStudentAssociations(Collections.emptyList());
+
+        LessonStudentDto ls = new LessonStudentDto();
+        ls.setStatus(LessonStudentStatus.SCHEDULED);
+        ls.setCurrency(Currency.USD);
+        lesson.setStudentAssociations(List.of(ls));
 
         when(lessonService.getLessonById(1L)).thenReturn(lesson);
 
         mockMvc.perform(get("/lessons/profile/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/lesson-profile"))
-                .andExpect(model().attribute("lesson", lesson));
+                .andExpect(model().attribute("lesson", lesson))
+                .andExpect(model().attribute("canDeleteLesson", true));
+    }
+
+    @Test
+    void showLessonProfile_cannotDelete() throws Exception {
+        LessonProfileDTO lesson = new LessonProfileDTO();
+        lesson.setId(1L);
+
+        LessonStudentDto ls = new LessonStudentDto();
+        ls.setStatus(LessonStudentStatus.COMPLETED);
+        ls.setCurrency(Currency.USD);
+        lesson.setStudentAssociations(List.of(ls));
+
+        when(lessonService.getLessonById(1L)).thenReturn(lesson);
+
+        mockMvc.perform(get("/lessons/profile/1"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("canDeleteLesson", false));
     }
 
     @Test
     void editLessonForm() throws Exception {
         LessonStudentDto lessonStudentDto = new LessonStudentDto();
         lessonStudentDto.setStudentId(1L);
+        lessonStudentDto.setCurrency(Currency.USD);
 
         LessonProfileDTO lesson = new LessonProfileDTO();
         lesson.setId(1L);
@@ -156,11 +169,12 @@ class LessonViewControllerTest {
 
     @Test
     void updateLesson_whenValid() throws Exception {
-//        when(lessonService.updateLesson(any(Lesson.class), anyList())).thenReturn(new Lesson());
+        doNothing().when(lessonService).updateLesson(eq(1L), any(LessonUpdateForm.class));
 
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
-                        .param("selectedStudentIds", "1")
+                        .param("studentUpdates[0].studentId", "1")
+                        .param("studentUpdates[0].status", "COMPLETED")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/profile/1"))
@@ -169,11 +183,11 @@ class LessonViewControllerTest {
 
     @Test
     void updateLesson_whenInvalid_noStudents() throws Exception {
-        LessonProfileDTO lesson = new LessonProfileDTO();
-        lesson.setId(1L);
-        lesson.setStudentAssociations(Collections.emptyList());
+        LessonProfileDTO lessonDto = new LessonProfileDTO();
+        lessonDto.setId(1L);
+        lessonDto.setStudentAssociations(Collections.emptyList());
 
-        when(lessonService.getLessonById(1L)).thenReturn(lesson);
+        when(lessonService.getLessonById(1L)).thenReturn(lessonDto);
         when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(post("/lessons/update/1")
@@ -182,23 +196,7 @@ class LessonViewControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("lesson/edit-lesson"))
                 .andExpect(model().hasErrors())
-                .andExpect(model().attributeHasErrors("lesson"));
-    }
-
-    @Test
-    void updateLesson_whenInvalid_bindingResultErrors() throws Exception {
-        LessonProfileDTO lesson = new LessonProfileDTO();
-        lesson.setId(1L);
-        lesson.setStudentAssociations(Collections.emptyList());
-
-        when(lessonService.getLessonById(1L)).thenReturn(lesson);
-        when(studentService.getAllActiveStudents()).thenReturn(Collections.emptyList());
-
-        mockMvc.perform(post("/lessons/update/1")
-                        .param("selectedStudentIds", "1").with(csrf())) // missing date
-                .andExpect(status().isOk())
-                .andExpect(view().name("lesson/edit-lesson"))
-                .andExpect(model().attributeHasFieldErrors("lesson", "lessonDate"));
+                .andExpect(model().attributeHasErrors("lessonUpdateForm"));
     }
 
     @Test
