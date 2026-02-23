@@ -1,6 +1,8 @@
 package com.art.tutordesk.lesson;
 
 public enum AttendanceStatus {
+    PENDING,
     PRESENT,
-    ABSENT
+    ABSENT,
+    NOT_ATTENDED
 }

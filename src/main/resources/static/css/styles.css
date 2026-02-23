@@ -293,3 +293,44 @@ body.list-payments-page {
     color: #dc3545; /* Red */
     font-weight: bold;
 }
+
+/* Styles from lesson-profile.html */
+.status-SCHEDULED { color: white; }
+.status-SCHEDULED-option { color: black; }
+.status-COMPLETED { color: #28a745; } /* dark green */
+.status-CANCELED { color: #007bff; } /* blue */
+.status-NOT_ATTENDED { color: #dc3545; } /* red/pink */
+
+.remove-student-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+}
+
+/* Generic table styling for profile pages */
+.profile-page th, .profile-page td {
+    text-align: center;
+}
+.profile-page th:first-child, .profile-page td:first-child {
+    text-align: left;
+}
+
+/* Custom styles for form-select to match table rows */
+
+.form-select {
+    background-color: rgba(255, 255, 255, 0.1); /* Match tbody tr background */
+    border-color: rgba(255, 255, 255, 0.2); /* Slightly lighter border to blend */
+        /* Adjust arrow color for dark theme if necessary */
+        --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+
+}
+
+.form-select:focus {
+    background-color: rgba(255, 255, 255, 0.2); /* Slightly darker on focus */
+    border-color: #ff7e5f; /* Highlight border on focus */
+    box-shadow: 0 0 8px 2px #ff7e5f;
+}

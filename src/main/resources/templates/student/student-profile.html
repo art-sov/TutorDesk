@@ -20,7 +20,7 @@
             <div th:each="entry : ${student.balances}">
                 <p class="card-text">
                     <strong>Balance:</strong>
-                    <span th:text="${entry.key.symbol + ' ' + #numbers.formatDecimal(entry.value, 1, 2)}"
+                    <span th:text="${entry.key.symbol + #numbers.formatDecimal(entry.value, 1, 2)}"
                           th:classappend="${entry.value.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-success' : (entry.value.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'text-danger' : 'text-primary')}">
                     </span>
                 </p>

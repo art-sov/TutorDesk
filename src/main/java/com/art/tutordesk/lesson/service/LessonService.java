@@ -1,16 +1,19 @@
 package com.art.tutordesk.lesson.service;
 
-import com.art.tutordesk.balance.BalanceService;
-import com.art.tutordesk.lesson.AttendanceStatus;
+import com.art.tutordesk.balance.BalanceTransactionService;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
-import com.art.tutordesk.lesson.PaymentStatusUtil;
-import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
+import com.art.tutordesk.lesson.LessonStudentStatus;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.dto.LessonStudentUpdateDTO;
+import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.repository.LessonRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
+import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +24,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,31 +37,20 @@ public class LessonService {
     private final LessonRepository lessonRepository;
     private final StudentService studentService;
     private final LessonStudentService lessonStudentService;
-    private final BalanceService balanceService;
+    private final LessonStudentRepository lessonStudentRepository;
     private final LessonMapper lessonMapper;
-    private final PaymentStatusUtil paymentStatusUtil;
+    private final BalanceTransactionService balanceTransactionService;
 
     public List<LessonListDTO> getLessonsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
-        log.debug("Found {} lessons between {} and {}", lessons.size(), startDate, endDate);
         return lessons.stream()
-                .map(lesson -> {
-                    LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
-                    dto.setPaymentStatus(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents()));
-                    return dto;
-                })
+                .map(lessonMapper::toLessonListDTO)
                 .collect(Collectors.toList());
     }
 
     public LessonProfileDTO getLessonById(Long id) {
-        Lesson lesson = lessonRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Lesson not found with id: {}", id);
-                    return new RuntimeException("Lesson not found with id: " + id);
-                });
-        LessonProfileDTO dto = lessonMapper.toLessonProfileDTO(lesson);
-        dto.setPaymentStatus(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson.getLessonStudents()));
-        return dto;
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
+        return lessonMapper.toLessonProfileDTO(lesson);
     }
 
     @Transactional
@@ -67,148 +58,133 @@ public class LessonService {
         Lesson savedLesson = lessonRepository.save(lesson);
         log.info("Lesson created: {id={}, date={}} with {} students.",
                 savedLesson.getId(), savedLesson.getLessonDate(), selectedStudentIds != null ? selectedStudentIds.size() : 0);
-        List<Student> students = associateStudentsWithLesson(savedLesson, selectedStudentIds, Map.of());
-        students.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
+        associateStudentsWithLesson(savedLesson, selectedStudentIds);
         return savedLesson;
     }
 
     @Transactional
-    public Lesson updateLesson(Lesson lesson, List<Long> newStudentIds) {
-        Lesson existingLesson = lessonRepository.findById(lesson.getId())
-                .orElseThrow(() -> {
-                    log.warn("Lesson not found for update with id: {}", lesson.getId());
-                    return new RuntimeException("Lesson not found for update with id: " + lesson.getId());
-                });
+    public Lesson updateLesson(Long lessonId, LessonUpdateForm form) {
+        Lesson existingLesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found for update with id: " + lessonId));
 
-        log.info("Updating lesson {}: from date={} to date={}",
-                lesson.getId(), existingLesson.getLessonDate(), lesson.getLessonDate());
+        existingLesson.setLessonDate(form.getLessonDate());
 
-        Set<Student> allAffectedStudents = new HashSet<>();
-        existingLesson.getLessonStudents().forEach(ls -> allAffectedStudents.add(ls.getStudent()));
+        Map<Long, LessonStudent> existingAssociations = existingLesson.getLessonStudents().stream()
+                .collect(Collectors.toMap(ls -> ls.getStudent().getId(), ls -> ls));
 
-        Map<Long, PaymentStatus> existingStudentPaymentStatuses = existingLesson.getLessonStudents().stream()
-                .collect(Collectors.toMap(
-                        lessonStudent -> lessonStudent.getStudent().getId(),
-                        LessonStudent::getPaymentStatus,
-                        (oldValue, newValue) -> oldValue
-                ));
+        Map<Long, LessonStudentUpdateDTO> updates = form.getStudentUpdates().stream()
+                .collect(Collectors.toMap(LessonStudentUpdateDTO::getStudentId, update -> update));
 
-        // Reverse debits for all students who were in the lesson using changeBalance
-        existingLesson.getLessonStudents().forEach(ls ->
-                balanceService.changeBalance(ls.getStudent().getId(), ls.getCurrency(), ls.getPrice()));
+        // Remove students who are no longer in the lesson
+        Set<Long> studentsToRemove = existingAssociations.keySet().stream()
+                .filter(studentId -> !updates.containsKey(studentId))
+                .collect(Collectors.toSet());
 
-        existingLesson.setLessonDate(lesson.getLessonDate());
-
-        existingLesson.getLessonStudents().clear();
-        lessonRepository.flush(); // Ensure the removal is processed before adding new associations
-
-        List<Student> newStudents = associateStudentsWithLesson(existingLesson, newStudentIds, existingStudentPaymentStatuses);
-        allAffectedStudents.addAll(newStudents);
-        log.info("Lesson {} updated with {} students. Affected student IDs: {}",
-                lesson.getId(), newStudentIds != null ? newStudentIds.size() : 0,
-                allAffectedStudents.stream().map(Student::getId).collect(Collectors.toList()));
-
-        // Resync status for all affected students (both old and new)
-        allAffectedStudents.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
-
-        return existingLesson;
-    }
-
-    private List<Student> associateStudentsWithLesson(Lesson lesson, List<Long> studentIds, Map<Long, PaymentStatus> existingStatuses) {
-        if (CollectionUtils.isEmpty(studentIds)) {
-            log.debug("No students selected for lesson {}. No associations to create.", lesson.getId());
-            return List.of();
+        for (Long studentId : studentsToRemove) {
+            LessonStudent ls = existingAssociations.get(studentId);
+            handlePriceAndStatusChange(ls, ls.getPrice(), LessonStudentStatus.CANCELED); // Treat removal as cancellation
+            existingLesson.getLessonStudents().remove(ls);
+            lessonStudentRepository.delete(ls);
+            log.info("Removed student {} from lesson {}", studentId, lessonId);
         }
 
+        // Update existing students and add new ones
+        boolean isGroupLesson = updates.size() > 1;
+        for (LessonStudentUpdateDTO update : form.getStudentUpdates()) {
+            LessonStudent existingLs = existingAssociations.get(update.getStudentId());
+
+            if (existingLs != null) {
+                // Student already in lesson, update price and status if changed
+                BigDecimal newPrice = isGroupLesson ? existingLs.getStudent().getPriceGroup() : existingLs.getStudent().getPriceIndividual();
+                handlePriceAndStatusChange(existingLs, newPrice, update.getStatus());
+            } else {
+                // New student for this lesson
+                Student student = studentService.getStudentEntityById(update.getStudentId());
+                addNewStudentToLesson(existingLesson, student, update.getStatus(), isGroupLesson);
+            }
+        }
+        return lessonRepository.save(existingLesson);
+    }
+
+    private void handlePriceAndStatusChange(LessonStudent lessonStudent, BigDecimal newPrice, LessonStudentStatus newStatus) {
+        LessonStudentStatus oldStatus = lessonStudent.getStatus();
+        BigDecimal oldPrice = lessonStudent.getPrice();
+        boolean priceChanged = oldPrice.compareTo(newPrice) != 0;
+        boolean statusChanged = oldStatus != newStatus;
+
+        if (!priceChanged && !statusChanged) {
+            return;
+        }
+
+        Student student = lessonStudent.getStudent();
+        Long lessonStudentId = lessonStudent.getId();
+        Currency currency = lessonStudent.getCurrency();
+
+        log.info("Handling change for student {} in lesson {}: status {} -> {}, price {} -> {}",
+                student.getId(), lessonStudent.getLesson().getId(), oldStatus, newStatus, oldPrice, newPrice);
+
+        // Case 1: Status was already chargeable
+        if (isChargeable(oldStatus)) {
+            // If exiting chargeable state OR price changed, we must reverse the old charge
+            if (!isChargeable(newStatus) || priceChanged) {
+                balanceTransactionService.createBalanceTransaction(student, TransactionType.LESSON_CHARGE_REVERSAL,
+                        currency, TransactionSource.LESSON, oldPrice, lessonStudentId);
+                log.info("Recorded LESSON_CHARGE_REVERSAL for student {} (old price {})", student.getId(), oldPrice);
+            }
+            // If staying in chargeable state AND price changed, apply new charge
+            if (isChargeable(newStatus) && priceChanged) {
+                balanceTransactionService.createBalanceTransaction(student, TransactionType.LESSON_CHARGE,
+                        currency, TransactionSource.LESSON, newPrice.negate(), lessonStudentId);
+                log.info("Recorded LESSON_CHARGE for student {} with NEW price {}", student.getId(), newPrice);
+            }
+        }
+        // Case 2: Status was NOT chargeable, but now it IS
+        else if (isChargeable(newStatus)) {
+            balanceTransactionService.createBalanceTransaction(student, TransactionType.LESSON_CHARGE,
+                    currency, TransactionSource.LESSON, newPrice.negate(), lessonStudentId);
+            log.info("Recorded LESSON_CHARGE for student {} with price {}", student.getId(), newPrice);
+        }
+
+        lessonStudent.setPrice(newPrice);
+        lessonStudent.setStatus(newStatus);
+    }
+
+    private boolean isChargeable(LessonStudentStatus status) {
+        return status == LessonStudentStatus.COMPLETED || status == LessonStudentStatus.NOT_ATTENDED;
+    }
+
+    private void associateStudentsWithLesson(Lesson lesson, List<Long> studentIds) {
+        if (CollectionUtils.isEmpty(studentIds)) {
+            return;
+        }
         List<Student> selectedStudents = studentService.getStudentsByIds(studentIds);
         boolean isGroupLesson = selectedStudents.size() > 1;
 
         for (Student student : selectedStudents) {
-            PaymentStatus paymentStatus = existingStatuses.getOrDefault(student.getId(), PaymentStatus.UNPAID);
-            LessonStudent lessonStudent = lessonStudentService.buildLessonStudent(student, lesson, paymentStatus);
-
-            BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
-            lessonStudent.setPrice(price);
-            lessonStudent.setCurrency(student.getCurrency()); // Ensure currency is set
-
-            if (price.compareTo(BigDecimal.ZERO) == 0) {
-                lessonStudent.setPaymentStatus(PaymentStatus.FREE);
-            } else {
-                lessonStudent.setPaymentStatus(paymentStatus);
-            }
-
-            LessonStudent savedLessonStudent = lessonStudentService.save(lessonStudent);
-            lesson.getLessonStudents().add(savedLessonStudent);
-            // Debit the balance for the new lesson association using changeBalance
-            balanceService.changeBalance(student.getId(), savedLessonStudent.getCurrency(), savedLessonStudent.getPrice().negate());
-            log.debug("Associated student {} with lesson {} at price {} {}. Initial status: {}.",
-                    student.getId(), lesson.getId(), savedLessonStudent.getPrice(),
-                    savedLessonStudent.getCurrency(), savedLessonStudent.getPaymentStatus());
+            addNewStudentToLesson(lesson, student, LessonStudentStatus.SCHEDULED, isGroupLesson);
         }
-        return selectedStudents;
+    }
+
+    private void addNewStudentToLesson(Lesson lesson, Student student, LessonStudentStatus status, boolean isGroupLesson) {
+        LessonStudent lessonStudent = lessonStudentService.buildLessonStudent(student, lesson);
+
+        BigDecimal price = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
+        lessonStudent.setPrice(price);
+        lessonStudent.setCurrency(student.getCurrency());
+        // Start with SCHEDULED so handlePriceAndStatusChange correctly applies initial charges if needed
+        lessonStudent.setStatus(LessonStudentStatus.SCHEDULED);
+
+        lessonStudentService.save(lessonStudent);
+        lesson.getLessonStudents().add(lessonStudent);
+
+        // Immediately handle charge if added with a chargeable status
+        handlePriceAndStatusChange(lessonStudent, price, status);
+        log.info("Added student {} to lesson {} with status {}", student.getId(), lesson.getId(), status);
     }
 
     @Transactional
     public void deleteLesson(Long id) {
-        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> {
-            log.warn("Lesson not found for deletion with id: {}", id);
-            return new RuntimeException("Lesson not found for deletion with id: " + id);
-        });
-        log.info("Deleting lesson: {id={}, date={}}",
-                lesson.getId(), lesson.getLessonDate());
-
-        Set<Student> affectedStudents = lesson.getLessonStudents().stream()
-                .map(LessonStudent::getStudent)
-                .collect(Collectors.toSet());
-
-        // Reverse the debit for each student in the lesson using changeBalance
-        lesson.getLessonStudents().forEach(ls ->
-                balanceService.changeBalance(ls.getStudent().getId(), ls.getCurrency(), ls.getPrice()));
-
         lessonRepository.deleteById(id);
         log.info("Lesson with ID {} deleted.", id);
-
-        // After deletion, resync the status for all affected students
-        affectedStudents.forEach(student -> balanceService.resyncPaymentStatus(student.getId()));
-    }
-
-    @Transactional
-    public AttendanceUpdateResponse updateAttendance(Long lessonId, Long studentId, AttendanceStatus newStatus) {
-        LessonStudent lessonStudent = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId)
-                .orElseThrow(() -> new RuntimeException("LessonStudent association not found for lesson " + lessonId + " and student " + studentId));
-
-        if (lessonStudent.getAttendanceStatus() == newStatus) {
-            return new AttendanceUpdateResponse(lessonStudent.getPrice(), lessonStudent.getPaymentStatus().name()); // No change needed
-        }
-
-        BigDecimal oldPrice = lessonStudent.getPrice();
-        BigDecimal newPrice;
-
-        Student student = lessonStudent.getStudent();
-        boolean isGroupLesson = lessonStudent.getLesson().getLessonStudents().size() > 1;
-
-        if (newStatus == AttendanceStatus.ABSENT) {
-            newPrice = BigDecimal.ZERO;
-        } else {
-            newPrice = isGroupLesson ? student.getPriceGroup() : student.getPriceIndividual();
-        }
-
-        lessonStudent.setAttendanceStatus(newStatus);
-        lessonStudent.setPrice(newPrice);
-        lessonStudentService.save(lessonStudent);
-
-        BigDecimal priceDifference = newPrice.subtract(oldPrice);
-
-        balanceService.changeBalance(student.getId(), lessonStudent.getCurrency(), priceDifference.negate());
-        balanceService.resyncPaymentStatus(student.getId());
-
-        LessonStudent updatedLessonStudent = lessonStudentService.findByLessonIdAndStudentId(lessonId, studentId)
-                .orElseThrow(() -> new RuntimeException("Could not re-fetch LessonStudent after update"));
-
-        log.info("Updated attendance for student {} in lesson {} to {}. Price changed from {} to {}. New payment status: {}",
-                studentId, lessonId, newStatus, oldPrice, newPrice, updatedLessonStudent.getPaymentStatus().name());
-
-        return new AttendanceUpdateResponse(newPrice, updatedLessonStudent.getPaymentStatus().name());
     }
 }
-

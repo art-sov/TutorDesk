@@ -19,14 +19,6 @@ public class BalanceQueryService {
     private final BalanceTransactionRepository balanceTransactionRepository;
 
     @Transactional(readOnly = true)
-    public BigDecimal getCurrentBalance(Long studentId, Currency currency) {
-        List<BalanceTransaction> transactions = balanceTransactionRepository.findByStudentIdAndCurrency(studentId, currency);
-        return transactions.stream()
-                .map(BalanceTransaction::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    @Transactional(readOnly = true)
     public Map<Currency, BigDecimal> getAllBalancesForStudent(Long studentId) {
         List<BalanceTransaction> transactions = balanceTransactionRepository.findByStudentId(studentId);
         return transactions.stream()

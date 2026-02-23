@@ -1,6 +1,6 @@
 package com.art.tutordesk.lesson.dto;
 
-import com.art.tutordesk.lesson.AttendanceStatus;
+import com.art.tutordesk.lesson.LessonStudentStatus;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
 import lombok.Getter;
@@ -16,7 +16,9 @@ public class LessonStudentDto {
     private String studentFirstName;
     private String studentLastName;
     private PaymentStatus paymentStatus;
-    private AttendanceStatus attendanceStatus;
     private BigDecimal price;
+    private BigDecimal priceIndividual;
+    private BigDecimal priceGroup;
     private Currency currency;
+    private LessonStudentStatus status;
 }

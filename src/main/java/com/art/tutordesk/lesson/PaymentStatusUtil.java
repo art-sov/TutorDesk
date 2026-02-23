@@ -3,8 +3,8 @@ package com.art.tutordesk.lesson;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Component
 public class PaymentStatusUtil {
@@ -14,9 +14,7 @@ public class PaymentStatusUtil {
             return PaymentStatus.UNPAID;
         }
 
-        Set<LessonStudent> attendingStudents = lessonStudents.stream()
-                .filter(ls -> ls.getAttendanceStatus() != AttendanceStatus.ABSENT)
-                .collect(Collectors.toSet());
+        Set<LessonStudent> attendingStudents = new HashSet<>(lessonStudents);
 
         if (CollectionUtils.isEmpty(attendingStudents)) {
             return PaymentStatus.PAID;
@@ -29,13 +27,13 @@ public class PaymentStatusUtil {
 
         for (LessonStudent ls : attendingStudents) {
             // NOTE: As per business logic, LessonStudent status can only be PAID, UNPAID, or FREE.
-            if (ls.getPaymentStatus() == PaymentStatus.PAID) {
-                paidCount++;
-            } else if (ls.getPaymentStatus() == PaymentStatus.UNPAID) {
-                unpaidCount++;
-            } else if (ls.getPaymentStatus() == PaymentStatus.FREE) {
-                freeCount++;
-            }
+//            if (ls.getPaymentStatus() == PaymentStatus.PAID) {
+//                paidCount++;
+//            } else if (ls.getPaymentStatus() == PaymentStatus.UNPAID) {
+//                unpaidCount++;
+//            } else if (ls.getPaymentStatus() == PaymentStatus.FREE) {
+//                freeCount++;
+//            }
         }
 
         // Rule 1: Lesson is FREE if ALL attending students are FREE

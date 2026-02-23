@@ -86,24 +86,24 @@ public class BalanceService {
     private void resyncPaymentStatusForCurrency(Student student, Currency currency) {
         BigDecimal credit = paymentRepository.sumPayments(student, currency);
 
-        List<LessonStudent> lessons =
-                lessonStudentRepository
-                        .findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
-                                student, currency, PaymentStatus.FREE);
+//        List<LessonStudent> lessons =
+//                lessonStudentRepository
+//                        .findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(
+//                                student, currency, PaymentStatus.FREE);
 
-        for (LessonStudent lesson : lessons) {
-            PaymentStatus oldStatus = lesson.getPaymentStatus();
-            if (credit.compareTo(lesson.getPrice()) >= 0) {
-                lesson.setPaymentStatus(PaymentStatus.PAID);
-                credit = credit.subtract(lesson.getPrice());
-            } else {
-                lesson.setPaymentStatus(PaymentStatus.UNPAID);
-            }
-            if (oldStatus != lesson.getPaymentStatus()) {
-                log.info("LessonStudent {}: payment status changed from {} to {} for student {} lesson {}.",
-                        lesson.getId(), oldStatus, lesson.getPaymentStatus(), student.getId(), lesson.getLesson().getId());
-            }
-        }
+//        for (LessonStudent lesson : lessons) {
+//            PaymentStatus oldStatus = lesson.getPaymentStatus();
+//            if (credit.compareTo(lesson.getPrice()) >= 0) {
+//                lesson.setPaymentStatus(PaymentStatus.PAID);
+//                credit = credit.subtract(lesson.getPrice());
+//            } else {
+//                lesson.setPaymentStatus(PaymentStatus.UNPAID);
+//            }
+//            if (oldStatus != lesson.getPaymentStatus()) {
+//                log.info("LessonStudent {}: payment status changed from {} to {} for student {} lesson {}.",
+//                        lesson.getId(), oldStatus, lesson.getPaymentStatus(), student.getId(), lesson.getLesson().getId());
+//            }
+//        }
         log.debug("Resync for student {} currency {} completed. Remaining credit: {}", student.getId(), currency, credit);
     }
 }

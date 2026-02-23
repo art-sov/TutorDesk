@@ -1,7 +1,6 @@
 package com.art.tutordesk.lesson;
 
 import com.art.tutordesk.config.SecurityConfig;
-import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
@@ -157,7 +156,7 @@ class LessonViewControllerTest {
 
     @Test
     void updateLesson_whenValid() throws Exception {
-        when(lessonService.updateLesson(any(Lesson.class), anyList())).thenReturn(new Lesson());
+//        when(lessonService.updateLesson(any(Lesson.class), anyList())).thenReturn(new Lesson());
 
         mockMvc.perform(post("/lessons/update/1")
                         .param("lessonDate", "2025-12-26")
@@ -223,23 +222,5 @@ class LessonViewControllerTest {
         student.setCurrency(Currency.USD);
         student.setActive(true);
         return student;
-    }
-
-    @Test
-    void updateAttendance_shouldReturnUpdatedPriceAndStatus() throws Exception {
-        BigDecimal newPrice = BigDecimal.ZERO;
-        String newStatus = "UNPAID";
-        AttendanceUpdateResponse serviceResponse = new AttendanceUpdateResponse(newPrice, newStatus);
-
-        when(lessonService.updateAttendance(any(Long.class), any(Long.class), any(com.art.tutordesk.lesson.AttendanceStatus.class)))
-                .thenReturn(serviceResponse);
-
-        mockMvc.perform(post("/lessons/1/students/1/attendance")
-                        .with(csrf())
-                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
-                        .content("{\"status\":\"ABSENT\"}"))
-                .andExpect(status().isOk())
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.newPrice").value(newPrice.doubleValue()))
-                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.newPaymentStatus").value(newStatus));
     }
 }

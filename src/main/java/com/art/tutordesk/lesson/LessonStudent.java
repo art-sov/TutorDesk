@@ -38,8 +38,6 @@ public class LessonStudent {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private LessonStudentStatus status = LessonStudentStatus.SCHEDULED;

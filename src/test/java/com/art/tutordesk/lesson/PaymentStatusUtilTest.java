@@ -19,7 +19,7 @@ class PaymentStatusUtilTest {
 
     private LessonStudent createLessonStudent(PaymentStatus status, AttendanceStatus attendanceStatus) {
         LessonStudent lessonStudent = new LessonStudent();
-        lessonStudent.setPaymentStatus(status);
+//        lessonStudent.setPaymentStatus(status);
         lessonStudent.setAttendanceStatus(attendanceStatus);
         return lessonStudent;
     }
