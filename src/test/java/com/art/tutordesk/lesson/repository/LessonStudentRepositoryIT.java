@@ -1,10 +1,7 @@
 package com.art.tutordesk.lesson.repository;
 
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
-import com.art.tutordesk.student.Student;
-import com.art.tutordesk.student.StudentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -28,9 +25,6 @@ public class LessonStudentRepositoryIT {
 
     @Autowired
     private LessonStudentRepository lessonStudentRepository;
-
-    @Autowired
-    private StudentRepository studentRepository;
 
     @Test
     void findByLessonDateBetweenAndStudentIds_withSpecificStudent_shouldReturnMatchingLessons() {
@@ -67,35 +61,6 @@ public class LessonStudentRepositoryIT {
         assertThat(result).hasSize(2);
         List<Long> foundStudentIds = result.stream().map(ls -> ls.getStudent().getId()).collect(Collectors.toList());
         assertThat(foundStudentIds).containsExactlyInAnyOrder(1L, 2L);
-    }
-
-    @Test
-    void findAllByStudentAndCurrencyAndPaymentStatusNot_shouldReturnCorrectOrderedList() {
-        Student student1 = studentRepository.findById(1L).orElseThrow();
-        Currency currency = Currency.USD;
-        PaymentStatus statusToExclude = PaymentStatus.FREE;
-
-//        List<LessonStudent> result = lessonStudentRepository.findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(student1, currency, statusToExclude);
-
-//        assertThat(result).hasSize(2);
-//        // Records for student 1 in USD are from 2025-01-01 (UNPAID) and 2025-01-10 (PAID)
-//        assertThat(result.getFirst().getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 1));
-//        assertThat(result.getFirst().getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
-//        assertThat(result.get(1).getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 10));
-//        assertThat(result.get(1).getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-    }
-
-    @Test
-    void findAllByStudentAndCurrencyAndPaymentStatusNot_excludingPaid_shouldReturnUnpaid() {
-        Student student1 = studentRepository.findById(1L).orElseThrow();
-        Currency currency = Currency.USD;
-        PaymentStatus statusToExclude = PaymentStatus.PAID;
-
-//        List<LessonStudent> result = lessonStudentRepository.findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(student1, currency, statusToExclude);
-
-//        assertThat(result).hasSize(1);
-//        assertThat(result.getFirst().getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
-//        assertThat(result.getFirst().getLesson().getLessonDate()).isEqualTo(LocalDate.of(2025, 1, 1));
     }
 
     @Test
