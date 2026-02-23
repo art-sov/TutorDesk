@@ -72,19 +72,34 @@ public class LessonRepositoryIT {
         assertThat(lessons).isEmpty();
     }
 
-    @Test
-    void findByLessonDateBetween_shouldFetchStudentsEagerly() {
-        LocalDate startDate = LocalDate.of(2025, 1, 1);
-        LocalDate endDate = LocalDate.of(2025, 1, 1);
-
-        List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
-        Lesson lesson = lessons.getFirst();
-
-        // No LazyInitializationException should be thrown when accessing students
-        assertThat(lesson.getLessonStudents()).hasSize(2);
-        List<Long> studentIds = lesson.getLessonStudents().stream()
-                .map(ls -> ls.getStudent().getId())
-                .collect(Collectors.toList());
-        assertThat(studentIds).containsExactlyInAnyOrder(1L, 2L);
+        @Test
+        void findByLessonDateBetween_shouldFetchStudentsEagerly() {
+            LocalDate startDate = LocalDate.of(2025, 1, 1);
+            LocalDate endDate = LocalDate.of(2025, 1, 1);
+    
+            List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+            Lesson lesson = lessons.getFirst();
+    
+            // No LazyInitializationException should be thrown when accessing students
+            assertThat(lesson.getLessonStudents()).hasSize(2);
+            List<Long> studentIds = lesson.getLessonStudents().stream()
+                    .map(ls -> ls.getStudent().getId())
+                    .collect(Collectors.toList());
+            assertThat(studentIds).containsExactlyInAnyOrder(1L, 2L);
+        }
+    
+        @Test
+        void findByLessonDateBetween_shouldReturnLessonsInAscendingOrder() {
+            LocalDate startDate = LocalDate.of(2025, 1, 1);
+            LocalDate endDate = LocalDate.of(2025, 1, 10);
+    
+            List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+    
+            assertThat(lessons).isNotNull();
+            assertThat(lessons).hasSize(4);
+            // Verify the order based on lesson_date: 2025-01-01 (ID 1), 2025-01-02 (ID 2), 2025-01-05 (ID 4), 2025-01-10 (ID 3)
+            assertThat(lessons.stream().map(Lesson::getId).collect(Collectors.toList()))
+                    .containsExactly(1L, 2L, 4L, 3L);
+        }
     }
-}
+    

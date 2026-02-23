@@ -12,13 +12,13 @@ INSERT INTO lessons (id, lesson_date) VALUES
 (3, '2025-01-10'),
 (4, '2025-01-05');
 
-INSERT INTO lesson_student (id, lesson_id, student_id, price, currency) VALUES
-(1, 1, 1, 25.00, 'USD'),   -- Student 1
-(2, 1, 2, 30.00, 'EUR'),   -- Student 2
-(3, 2, 3, 0.00, 'PLN'),     -- Student 3
-(4, 2, 4, 20.00, 'USD'),   -- Student 4
-(5, 3, 1, 25.00, 'USD'),     -- Student 1, future lesson
-(6, 4, 1, 30.00, 'EUR');    -- Student 1, past lesson, different currency
+INSERT INTO lesson_student (id, lesson_id, student_id, price, currency, status) VALUES
+(1, 1, 1, 25.00, 'USD', 'SCHEDULED'),   -- Student 1
+(2, 1, 2, 30.00, 'EUR', 'SCHEDULED'),   -- Student 2
+(3, 2, 3, 0.00, 'PLN', 'SCHEDULED'),     -- Student 3
+(4, 2, 4, 20.00, 'USD', 'SCHEDULED'),   -- Student 4
+(5, 3, 1, 25.00, 'USD', 'SCHEDULED'),     -- Student 1, future lesson
+(6, 4, 1, 30.00, 'EUR', 'SCHEDULED');    -- Student 1, past lesson, different currency
 
 INSERT INTO payments (id, payment_date, student_id, payment_method, amount, currency, created_at, updated_at) VALUES
 (1, '2024-12-20', 1, 'CARD', 10.00, 'USD', '2025-01-01 10:00:00', '2025-01-01 10:00:00'), -- Old payment for Student 1
