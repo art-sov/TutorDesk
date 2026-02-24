@@ -1,6 +1,6 @@
 package com.art.tutordesk.student.service;
 
-import com.art.tutordesk.balance.BalanceRepository;
+import com.art.tutordesk.balance.BalanceTransactionRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.StudentRepository;
@@ -17,7 +17,7 @@ public class StudentHardDeleteService {
     private final StudentRepository studentRepository;
     private final PaymentRepository paymentRepository;
     private final LessonStudentRepository lessonStudentRepository;
-    private final BalanceRepository balanceRepository;
+    private final BalanceTransactionRepository balanceTransactionRepository;
 
     @Transactional
     public void performHardDelete(Long studentId) {
@@ -36,7 +36,7 @@ public class StudentHardDeleteService {
         lessonStudentRepository.deleteAllByStudentId(studentId);
         log.debug("LessonStudents deleted for student ID: {}", studentId);
 
-        balanceRepository.deleteAllByStudentId(studentId);
+        balanceTransactionRepository.deleteByStudentId(studentId);
         log.debug("Balances deleted for student ID: {}", studentId);
 
         // Finally, delete the student

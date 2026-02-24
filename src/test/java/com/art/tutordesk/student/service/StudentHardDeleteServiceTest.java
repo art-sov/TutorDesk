@@ -1,6 +1,6 @@
 package com.art.tutordesk.student.service;
 
-import com.art.tutordesk.balance.BalanceRepository;
+import com.art.tutordesk.balance.BalanceTransactionRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
@@ -33,7 +33,7 @@ class StudentHardDeleteServiceTest {
     @Mock
     private LessonStudentRepository lessonStudentRepository;
     @Mock
-    private BalanceRepository balanceRepository;
+    private BalanceTransactionRepository balanceTransactionRepository;
 
     @InjectMocks
     private StudentHardDeleteService studentHardDeleteService;
@@ -42,7 +42,7 @@ class StudentHardDeleteServiceTest {
 
     @BeforeEach
     void setUp() {
-        student1 = createStudent(1L, "John", "Doe", true);
+        student1 = createStudent();
     }
 
     @Test
@@ -56,10 +56,10 @@ class StudentHardDeleteServiceTest {
         verify(studentRepository, times(1)).findById(studentId);
 
         // Verify deletion methods are called in the correct order
-        InOrder inOrder = inOrder(paymentRepository, lessonStudentRepository, balanceRepository, studentRepository);
+        InOrder inOrder = inOrder(paymentRepository, lessonStudentRepository, balanceTransactionRepository, studentRepository);
         inOrder.verify(paymentRepository, times(1)).deleteAllByStudentId(studentId);
         inOrder.verify(lessonStudentRepository, times(1)).deleteAllByStudentId(studentId);
-        inOrder.verify(balanceRepository, times(1)).deleteAllByStudentId(studentId);
+        inOrder.verify(balanceTransactionRepository, times(1)).deleteByStudentId(studentId);
         inOrder.verify(studentRepository, times(1)).deleteById(studentId);
     }
 
@@ -74,16 +74,16 @@ class StudentHardDeleteServiceTest {
         verify(studentRepository, times(1)).findById(studentId);
         verify(paymentRepository, never()).deleteAllByStudentId(anyLong());
         verify(lessonStudentRepository, never()).deleteAllByStudentId(anyLong());
-        verify(balanceRepository, never()).deleteAllByStudentId(anyLong());
+        verify(balanceTransactionRepository, never()).deleteByStudentId(anyLong());
         verify(studentRepository, never()).deleteById(anyLong());
     }
 
-    private Student createStudent(Long id, String firstName, String lastName, boolean active) {
+    private Student createStudent() {
         Student student = new Student();
-        student.setId(id);
-        student.setFirstName(firstName);
-        student.setLastName(lastName);
-        student.setActive(active);
+        student.setId(1L);
+        student.setFirstName("John");
+        student.setLastName("Doe");
+        student.setActive(true);
         return student;
     }
 }
