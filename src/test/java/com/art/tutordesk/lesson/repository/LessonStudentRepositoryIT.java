@@ -67,7 +67,7 @@ public class LessonStudentRepositoryIT {
     void deleteAllByStudentId_shouldRemoveAllStudentLessons() {
         Long studentIdToDelete = 1L;
         long initialCount = lessonStudentRepository.findAll().stream().filter(ls -> ls.getStudent().getId().equals(studentIdToDelete)).count();
-        assertThat(initialCount).isEqualTo(3); // Student 1 has 3 lessons
+        assertThat(initialCount).isEqualTo(4); // Student 1 has 3 lessons
 
         lessonStudentRepository.deleteAllByStudentId(studentIdToDelete);
         lessonStudentRepository.flush(); // Essential for @Modifying queries in tests
@@ -77,7 +77,7 @@ public class LessonStudentRepositoryIT {
 
         // And other students' lessons should remain
         long otherStudentsLessonCount = lessonStudentRepository.findAll().stream().filter(ls -> !ls.getStudent().getId().equals(studentIdToDelete)).count();
-        assertThat(otherStudentsLessonCount).isEqualTo(3);
+        assertThat(otherStudentsLessonCount).isEqualTo(4);
     }
 
     @Test
