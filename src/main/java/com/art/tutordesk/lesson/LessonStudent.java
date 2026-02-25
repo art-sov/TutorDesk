@@ -42,10 +42,6 @@ public class LessonStudent {
     @Column(name = "status", nullable = false)
     private LessonStudentStatus status = LessonStudentStatus.SCHEDULED;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "attendance_status", nullable = false)
-    private AttendanceStatus attendanceStatus = AttendanceStatus.PRESENT;
-
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)

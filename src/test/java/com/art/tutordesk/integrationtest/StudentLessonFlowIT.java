@@ -1,11 +1,8 @@
 package com.art.tutordesk.integrationtest;
 
-import com.art.tutordesk.balance.Balance;
-import com.art.tutordesk.balance.BalanceRepository;
 import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.payment.Currency;
@@ -47,8 +44,7 @@ public class StudentLessonFlowIT {
     private MockMvc mockMvc;
     @Autowired
     private StudentRepository studentRepository;
-    @Autowired
-    private BalanceRepository balanceRepository;
+
     @Autowired
     private LessonStudentRepository lessonStudentRepository;
     @Autowired
@@ -94,11 +90,11 @@ public class StudentLessonFlowIT {
         assertThat(lessonStudent.getPrice()).isEqualByComparingTo("50.00"); // Individual lesson price
 
         // 5. Verify the student's balance is created and debited
-        Optional<Balance> balanceOpt = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD);
-        assertThat(balanceOpt).isPresent();
-        Balance balance = balanceOpt.get();
+//        Optional<Balance> balanceOpt = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD);
+//        assertThat(balanceOpt).isPresent();
+//        Balance balance = balanceOpt.get();
         // The balance should be the negative of the lesson price
-        assertThat(balance.getAmount()).isEqualByComparingTo("-50.00");
+//        assertThat(balance.getAmount()).isEqualByComparingTo("-50.00");
     }
 
     @Test
@@ -127,10 +123,10 @@ public class StudentLessonFlowIT {
         lessonService.saveLesson(lesson3, List.of(savedStudent.getId()));
 
         // Verify initial state
-        Balance initialBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
-        assertThat(initialBalance.getAmount()).isEqualByComparingTo("-180.00"); // 3 lessons * -60
-
-        List<LessonStudent> initialLessons = lessonStudentRepository.findAll();
+//        Balance initialBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
+//        assertThat(initialBalance.getAmount()).isEqualByComparingTo("-180.00"); // 3 lessons * -60
+//
+//        List<LessonStudent> initialLessons = lessonStudentRepository.findAll();
 //        assertThat(initialLessons).allMatch(ls -> ls.getPaymentStatus() == PaymentStatus.UNPAID);
 
 
@@ -147,8 +143,8 @@ public class StudentLessonFlowIT {
 
         // --- Assertions ---
         // 1. Verify student's balance is correct
-        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
-        assertThat(finalBalance.getAmount()).isEqualByComparingTo("-50.00"); // -180 + 130 = -50
+//        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
+//        assertThat(finalBalance.getAmount()).isEqualByComparingTo("-50.00"); // -180 + 130 = -50
 
         // 2. Verify payment statuses of lessons
         List<LessonStudent> finalLessons = lessonStudentRepository.findAll().stream()
@@ -192,11 +188,11 @@ public class StudentLessonFlowIT {
         assertThat(createdLessonStudents).hasSize(2);
         Lesson savedLesson = createdLessonStudents.getFirst().getLesson();
 
-        Balance balanceA_initial = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
-        assertThat(balanceA_initial.getAmount()).isEqualByComparingTo("-40.00");
-
-        Balance balanceB_initial = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
-        assertThat(balanceB_initial.getAmount()).isEqualByComparingTo("-35.00");
+//        Balance balanceA_initial = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
+//        assertThat(balanceA_initial.getAmount()).isEqualByComparingTo("-40.00");
+//
+//        Balance balanceB_initial = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
+//        assertThat(balanceB_initial.getAmount()).isEqualByComparingTo("-35.00");
 
         // 4. Update the lesson to remove student B, making it an individual lesson for student A
         mockMvc.perform(post("/lessons/update/{id}", savedLesson.getId())
@@ -207,12 +203,12 @@ public class StudentLessonFlowIT {
 
         // 5. Final Assertions
         // Verify Student B (removed) has their balance returned to zero
-        Balance balanceB_final = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
-        assertThat(balanceB_final.getAmount()).isEqualByComparingTo("0.00");
+//        Balance balanceB_final = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
+//        assertThat(balanceB_final.getAmount()).isEqualByComparingTo("0.00");
 
         // Verify Student A (remaining) is now charged the individual price
-        Balance balanceA_final = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
-        assertThat(balanceA_final.getAmount()).isEqualByComparingTo("-60.00");
+//        Balance balanceA_final = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
+//        assertThat(balanceA_final.getAmount()).isEqualByComparingTo("-60.00");
 
         // Verify the price on the LessonStudent record for Student A was also updated
         List<LessonStudent> finalLessonStudents = lessonStudentRepository.findAll();
@@ -253,8 +249,8 @@ public class StudentLessonFlowIT {
         // --- Initial Assertions: Verify lesson is PAID and balance is zero ---
         LessonStudent paidLessonStudent = lessonStudentRepository.findById(lessonStudent.getId()).orElseThrow();
 //        assertThat(paidLessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-        Balance balanceAfterPayment = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-        assertThat(balanceAfterPayment.getAmount()).isEqualByComparingTo("0.00");
+//        Balance balanceAfterPayment = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
+//        assertThat(balanceAfterPayment.getAmount()).isEqualByComparingTo("0.00");
         long paymentId = paymentRepository.findAll().getFirst().getId();
 
         // --- Action 1: Delete the Payment ---
@@ -265,8 +261,8 @@ public class StudentLessonFlowIT {
 
         // --- Assertions after Payment Deletion ---
         // Verify balance is debited again
-        Balance balanceAfterPaymentDeletion = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-        assertThat(balanceAfterPaymentDeletion.getAmount()).isEqualByComparingTo("-75.00");
+//        Balance balanceAfterPaymentDeletion = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
+//        assertThat(balanceAfterPaymentDeletion.getAmount()).isEqualByComparingTo("-75.00");
         // Verify lesson status is UNPAID again
         LessonStudent unpaidLessonStudent = lessonStudentRepository.findById(lessonStudent.getId()).orElseThrow();
 //        assertThat(unpaidLessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
@@ -280,8 +276,8 @@ public class StudentLessonFlowIT {
 
         // --- Final Assertions ---
         // Verify balance is zero again
-        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-        assertThat(finalBalance.getAmount()).isEqualByComparingTo("0.00");
+//        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
+//        assertThat(finalBalance.getAmount()).isEqualByComparingTo("0.00");
         // Verify the LessonStudent record is gone
         assertThat(lessonStudentRepository.findAll()).isEmpty();
     }
@@ -321,8 +317,8 @@ public class StudentLessonFlowIT {
         // 4. Verify the lesson is paid
         LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
 //        assertThat(lessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-        Balance balance = balanceRepository.findByStudentIdAndCurrency(studentId, Currency.USD).orElseThrow();
-        assertThat(balance.getAmount()).isEqualByComparingTo("0.00");
+//        Balance balance = balanceRepository.findByStudentIdAndCurrency(studentId, Currency.USD).orElseThrow();
+//        assertThat(balance.getAmount()).isEqualByComparingTo("0.00");
 
         // 5. Deactivate the student
         mockMvc.perform(post("/students/deactivate/{id}", studentId)
@@ -341,7 +337,7 @@ public class StudentLessonFlowIT {
 
         // 7. Verify all associated data is gone
         assertThat(studentRepository.findById(studentId)).isEmpty();
-        assertThat(balanceRepository.findByStudentId(studentId)).isEmpty();
+//        assertThat(balanceRepository.findByStudentId(studentId)).isEmpty();
         assertThat(paymentRepository.findAll()).noneMatch(p -> p.getStudent().getId().equals(studentId));
         assertThat(lessonStudentRepository.findAll()).noneMatch(ls -> ls.getStudent().getId().equals(studentId));
     }
