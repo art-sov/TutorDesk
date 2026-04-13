@@ -24,12 +24,12 @@ public class LessonRepositoryIT {
     @Test
     void countByLessonDateGreaterThanEqual_shouldReturnCorrectCount() {
         long countAll = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 1));
-        long countThree = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 2));
-        long countTwo = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 3));
-        long countOne = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 6));
-        long countNone = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 11));
+        long countThree = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 5));
+        long countTwo = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 10));
+        long countOne = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 2, 1));
+        long countNone = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 2, 11));
 
-        assertThat(countAll).isEqualTo(4);
+        assertThat(countAll).isEqualTo(5);
         assertThat(countThree).isEqualTo(3);
         assertThat(countTwo).isEqualTo(2);
         assertThat(countOne).isEqualTo(1);
@@ -63,8 +63,8 @@ public class LessonRepositoryIT {
 
     @Test
     void findByLessonDateBetween_shouldReturnEmptyListForNoMatches() {
-        LocalDate startDate = LocalDate.of(2025, 2, 1);
-        LocalDate endDate = LocalDate.of(2025, 2, 28);
+        LocalDate startDate = LocalDate.of(2025, 3, 1);
+        LocalDate endDate = LocalDate.of(2025, 3, 31);
 
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
 

@@ -1,14 +1,15 @@
 package com.art.tutordesk.integrationtest;
 
+import com.art.tutordesk.balance.BalanceQueryService;
 import com.art.tutordesk.config.SecurityConfig;
-import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.LessonStudentStatus;
+import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
-import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,14 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -42,251 +43,255 @@ public class StudentLessonFlowIT {
 
     @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private StudentRepository studentRepository;
 
     @Autowired
-    private LessonStudentRepository lessonStudentRepository;
+    private LessonRepository lessonRepository;
+
     @Autowired
-    private LessonService lessonService;
+    private LessonStudentRepository lessonStudentRepository;
+
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private BalanceQueryService balanceQueryService;
+
+    private Student studentA;
+    private Student studentB;
+
+    @BeforeEach
+    void setUp() {
+        studentA = new Student();
+        studentA.setFirstName("Student");
+        studentA.setLastName("A");
+        studentA.setPriceIndividual(new BigDecimal("25.00"));
+        studentA.setPriceGroup(new BigDecimal("20.00"));
+        studentA.setCurrency(Currency.USD);
+        studentA.setActive(true);
+        studentA = studentRepository.save(studentA);
+
+        studentB = new Student();
+        studentB.setFirstName("Student");
+        studentB.setLastName("B");
+        studentB.setPriceIndividual(new BigDecimal("30.00"));
+        studentB.setPriceGroup(new BigDecimal("24.00"));
+        studentB.setCurrency(Currency.PLN);
+        studentB.setActive(true);
+        studentB = studentRepository.save(studentB);
+    }
+
     @Test
-    void test_createStudentAndAddLesson() throws Exception {
-        // 1. Create a new student via an HTTP POST request
-        mockMvc.perform(post("/students/create")
-                        .param("firstName", "John")
-                        .param("lastName", "Doe")
-                        .param("priceIndividual", "50.00")
-                        .param("priceGroup", "30.00")
-                        .param("currency", "USD")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/students/list"));
-
-        // 2. Verify the student is in the database
-        List<Student> students = studentRepository.findAll();
-        assertThat(students).hasSize(1);
-        Student student = students.getFirst();
-        assertThat(student.getFirstName()).isEqualTo("John");
-        assertThat(student.getPriceIndividual()).isEqualByComparingTo("50.00");
-
-        // 3. Create a new lesson for this student
+    void tc1_1_createLessonWithOneStudent() throws Exception {
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-12-20")
-                        .param("selectedStudentIds", student.getId().toString())
+                        .param("selectedStudentIds", studentA.getId().toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"));
 
-        // 4. Verify LessonStudent is created and has correct status
-        List<LessonStudent> lessonStudents = lessonStudentRepository.findAll();
+        assertThat(lessonRepository.findAll()).hasSize(1);
+        var lessonStudents = lessonStudentRepository.findAll();
         assertThat(lessonStudents).hasSize(1);
-        LessonStudent lessonStudent = lessonStudents.getFirst();
-        assertThat(lessonStudent.getStudent().getId()).isEqualTo(student.getId());
-        assertThat(lessonStudent.getLesson().getLessonDate()).isEqualTo("2025-12-20");
-//        assertThat(lessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
-        assertThat(lessonStudent.getPrice()).isEqualByComparingTo("50.00"); // Individual lesson price
+        var ls = lessonStudents.getFirst();
+        assertThat(ls.getStudent().getId()).isEqualTo(studentA.getId());
+        assertThat(ls.getStatus()).isEqualTo(LessonStudentStatus.SCHEDULED);
+        assertThat(ls.getPrice()).isEqualByComparingTo("25.00");
 
-        // 5. Verify the student's balance is created and debited
-//        Optional<Balance> balanceOpt = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD);
-//        assertThat(balanceOpt).isPresent();
-//        Balance balance = balanceOpt.get();
-        // The balance should be the negative of the lesson price
-//        assertThat(balance.getAmount()).isEqualByComparingTo("-50.00");
+        Map<Currency, BigDecimal> balances = balanceQueryService.getAllBalancesForStudent(studentA.getId());
+        assertThat(balances.getOrDefault(Currency.USD, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
-    void test_paymentCoversMultipleLessonsChronologically() throws Exception {
-        // --- Pre-requisite: A student with three unpaid lessons exists ---
-        // 1. Create Student
-        Student student = new Student();
-        student.setFirstName("Jane");
-        student.setLastName("Doe");
-        student.setPriceIndividual(new BigDecimal("60.00"));
-        student.setPriceGroup(new BigDecimal("40.00"));
-        student.setCurrency(Currency.EUR);
-        Student savedStudent = studentRepository.save(student);
-
-        // 2. Create three lessons for the student on different dates
-        Lesson lesson1 = new Lesson();
-        lesson1.setLessonDate(LocalDate.of(2025, 12, 21));
-        lessonService.saveLesson(lesson1, List.of(savedStudent.getId()));
-
-        Lesson lesson2 = new Lesson();
-        lesson2.setLessonDate(LocalDate.of(2025, 12, 22));
-        lessonService.saveLesson(lesson2, List.of(savedStudent.getId()));
-
-        Lesson lesson3 = new Lesson();
-        lesson3.setLessonDate(LocalDate.of(2025, 12, 23));
-        lessonService.saveLesson(lesson3, List.of(savedStudent.getId()));
-
-        // Verify initial state
-//        Balance initialBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
-//        assertThat(initialBalance.getAmount()).isEqualByComparingTo("-180.00"); // 3 lessons * -60
-//
-//        List<LessonStudent> initialLessons = lessonStudentRepository.findAll();
-//        assertThat(initialLessons).allMatch(ls -> ls.getPaymentStatus() == PaymentStatus.UNPAID);
-
-
-        // --- Action: Create a payment that covers the first two lessons but not the third ---
-        mockMvc.perform(post("/payments/create")
-                        .param("studentId", savedStudent.getId().toString())
-                        .param("amount", "130.00") // Covers lesson 1 & 2 (120), with 10 leftover
-                        .param("currency", "EUR")
-                        .param("paymentDate", "2025-12-23")
-                        .param("paymentMethod", "CASH")
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/payments/list"));
-
-        // --- Assertions ---
-        // 1. Verify student's balance is correct
-//        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(savedStudent.getId(), Currency.EUR).orElseThrow();
-//        assertThat(finalBalance.getAmount()).isEqualByComparingTo("-50.00"); // -180 + 130 = -50
-
-        // 2. Verify payment statuses of lessons
-        List<LessonStudent> finalLessons = lessonStudentRepository.findAll().stream()
-                .sorted(Comparator.comparing(ls -> ls.getLesson().getLessonDate()))
-                .collect(Collectors.toList());
-
-        assertThat(finalLessons).hasSize(3);
-//        assertThat(finalLessons.get(0).getPaymentStatus()).isEqualTo(PaymentStatus.PAID);     // Lesson 1 (cost 60, covered by payment)
-//        assertThat(finalLessons.get(1).getPaymentStatus()).isEqualTo(PaymentStatus.PAID);     // Lesson 2 (cost 60, covered by payment)
-//        assertThat(finalLessons.get(2).getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);   // Lesson 3 (cost 60, not enough funds)
-    }
-
-    @Test
-    void test_groupLessonToIndividualLessonBalanceChange() throws Exception {
-        // 1. Create two students
-        Student studentA = new Student();
-        studentA.setFirstName("Student");
-        studentA.setLastName("A");
-        studentA.setPriceIndividual(new BigDecimal("60.00"));
-        studentA.setPriceGroup(new BigDecimal("40.00"));
-        studentA.setCurrency(Currency.EUR);
-        studentA = studentRepository.save(studentA);
-
-        Student studentB = new Student();
-        studentB.setFirstName("Student");
-        studentB.setLastName("B");
-        studentB.setPriceIndividual(new BigDecimal("55.00")); // Different price for variety
-        studentB.setPriceGroup(new BigDecimal("35.00"));
-        studentB.setCurrency(Currency.EUR);
-        studentB = studentRepository.save(studentB);
-
-        // 2. Create one group lesson for both students
+    void tc1_2_createLessonWithMultipleStudents() throws Exception {
         mockMvc.perform(post("/lessons/create")
-                        .param("lessonDate", "2025-11-15")
+                        .param("lessonDate", "2025-12-20")
                         .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
-        // 3. Verify initial state: both are charged the group price
-        List<LessonStudent> createdLessonStudents = lessonStudentRepository.findAll();
-        assertThat(createdLessonStudents).hasSize(2);
-        Lesson savedLesson = createdLessonStudents.getFirst().getLesson();
+        var lessonStudents = lessonStudentRepository.findAll();
+        assertThat(lessonStudents).hasSize(2);
 
-//        Balance balanceA_initial = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
-//        assertThat(balanceA_initial.getAmount()).isEqualByComparingTo("-40.00");
-//
-//        Balance balanceB_initial = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
-//        assertThat(balanceB_initial.getAmount()).isEqualByComparingTo("-35.00");
+        var lsA = lessonStudents.stream().filter(ls -> ls.getStudent().getId().equals(studentA.getId())).findFirst().orElseThrow();
+        var lsB = lessonStudents.stream().filter(ls -> ls.getStudent().getId().equals(studentB.getId())).findFirst().orElseThrow();
 
-        // 4. Update the lesson to remove student B, making it an individual lesson for student A
-        mockMvc.perform(post("/lessons/update/{id}", savedLesson.getId())
-                        .param("lessonDate", "2025-11-15")
-                        .param("selectedStudentIds", studentA.getId().toString()) // Only student A remains
-                        .with(csrf()))
-                .andExpect(status().is3xxRedirection());
+        assertThat(lsA.getPrice()).isEqualByComparingTo("20.00");
+        assertThat(lsB.getPrice()).isEqualByComparingTo("24.00");
 
-        // 5. Final Assertions
-        // Verify Student B (removed) has their balance returned to zero
-//        Balance balanceB_final = balanceRepository.findByStudentIdAndCurrency(studentB.getId(), Currency.EUR).orElseThrow();
-//        assertThat(balanceB_final.getAmount()).isEqualByComparingTo("0.00");
-
-        // Verify Student A (remaining) is now charged the individual price
-//        Balance balanceA_final = balanceRepository.findByStudentIdAndCurrency(studentA.getId(), Currency.EUR).orElseThrow();
-//        assertThat(balanceA_final.getAmount()).isEqualByComparingTo("-60.00");
-
-        // Verify the price on the LessonStudent record for Student A was also updated
-        List<LessonStudent> finalLessonStudents = lessonStudentRepository.findAll();
-        assertThat(finalLessonStudents).hasSize(1);
-        LessonStudent finalLessonStudentA = finalLessonStudents.getFirst();
-        assertThat(finalLessonStudentA.getStudent().getId()).isEqualTo(studentA.getId());
-        assertThat(finalLessonStudentA.getPrice()).isEqualByComparingTo("60.00");
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).getOrDefault(Currency.USD, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentB.getId()).getOrDefault(Currency.PLN, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
-    void test_deletePaymentAndLessonAndVerifyBalance() throws Exception {
-        // --- Pre-requisite: A student with a paid lesson exists ---
-        // 1. Create Student
-        Student student = new Student();
-        student.setFirstName("Charlie");
-        student.setLastName("Brown");
-        student.setPriceIndividual(new BigDecimal("75.00"));
-        student.setPriceGroup(new BigDecimal("50.00"));
-        student.setCurrency(Currency.USD);
-        student = studentRepository.save(student);
-
-        // 2. Create a lesson for the student
-        Lesson lesson = new Lesson();
-        lesson.setLessonDate(LocalDate.of(2025, 10, 10));
-        Lesson savedLesson = lessonService.saveLesson(lesson, List.of(student.getId()));
-        LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
-
-        // 3. Make a payment for the lesson
-        mockMvc.perform(post("/payments/create")
-                        .param("studentId", student.getId().toString())
-                        .param("amount", "75.00")
-                        .param("currency", "USD")
-                        .param("paymentDate", "2025-10-10")
-                        .param("paymentMethod", "PAYPAL")
+    void tc3_1_chargeStudentByUpdatingStatus() throws Exception {
+        // Setup: Create lesson SCHEDULED
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
-        // --- Initial Assertions: Verify lesson is PAID and balance is zero ---
-        LessonStudent paidLessonStudent = lessonStudentRepository.findById(lessonStudent.getId()).orElseThrow();
-//        assertThat(paidLessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-//        Balance balanceAfterPayment = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-//        assertThat(balanceAfterPayment.getAmount()).isEqualByComparingTo("0.00");
-        long paymentId = paymentRepository.findAll().getFirst().getId();
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
 
-        // --- Action 1: Delete the Payment ---
-        mockMvc.perform(post("/payments/delete/{id}", paymentId)
+        // Step: Change SCHEDULED -> COMPLETED
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
                         .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/payments/list"));
+                .andExpect(status().is3xxRedirection());
 
-        // --- Assertions after Payment Deletion ---
-        // Verify balance is debited again
-//        Balance balanceAfterPaymentDeletion = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-//        assertThat(balanceAfterPaymentDeletion.getAmount()).isEqualByComparingTo("-75.00");
-        // Verify lesson status is UNPAID again
-        LessonStudent unpaidLessonStudent = lessonStudentRepository.findById(lessonStudent.getId()).orElseThrow();
-//        assertThat(unpaidLessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
-        assertThat(paymentRepository.findAll()).isEmpty();
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-25.00");
+    }
 
-        // --- Action 2: Delete the Lesson ---
-        mockMvc.perform(post("/lessons/delete/{id}", savedLesson.getId())
+    @Test
+    void tc3_2_reverseChargeByUpdatingStatus() throws Exception {
+        // Setup: Create lesson COMPLETED
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString())
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-25.00");
+
+        // Step: Change COMPLETED -> CANCELED
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "CANCELED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).getOrDefault(Currency.USD, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    @Test
+    void tc3_4_balanceCorrectionOnPriceChange() throws Exception {
+        // Setup: Lesson with Student A (COMPLETED) and Student B (SCHEDULED) -> Group price applies
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString())
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .param("studentUpdates[1].studentId", studentB.getId().toString())
+                        .param("studentUpdates[1].status", "SCHEDULED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-20.00");
+
+        // Step: Remove Student B -> Student A becomes Individual price (25.00)
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        // Student B is NOT in studentUpdates, so it will be removed
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-25.00");
+    }
+
+    @Test
+    void tc3_5_removeStudentFromChargedLesson() throws Exception {
+        // Setup: Group lesson, both COMPLETED
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString(), studentB.getId().toString())
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .param("studentUpdates[1].studentId", studentB.getId().toString())
+                        .param("studentUpdates[1].status", "COMPLETED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-20.00");
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentB.getId()).get(Currency.PLN)).isEqualByComparingTo("-24.00");
+
+        // Step: Remove Student B
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        // Verifications
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentB.getId()).getOrDefault(Currency.PLN, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).get(Currency.USD)).isEqualByComparingTo("-25.00");
+    }
+
+    @Test
+    void tc4_1_verifyDeleteDisabledInProfile() throws Exception {
+        // Setup: Lesson COMPLETED
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString())
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-12-20")
+                        .param("studentUpdates[0].studentId", studentA.getId().toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        // Verify that profile view says it cannot be deleted
+        mockMvc.perform(get("/lessons/profile/" + lessonId))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("canDeleteLesson", false));
+    }
+
+    @Test
+    void tc4_2_deleteLessonAllScheduled() throws Exception {
+        mockMvc.perform(post("/lessons/create")
+                        .param("lessonDate", "2025-12-20")
+                        .param("selectedStudentIds", studentA.getId().toString())
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        Long lessonId = lessonRepository.findAll().getFirst().getId();
+
+        mockMvc.perform(post("/lessons/delete/" + lessonId)
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/lessons/list"));
 
-        // --- Final Assertions ---
-        // Verify balance is zero again
-//        Balance finalBalance = balanceRepository.findByStudentIdAndCurrency(student.getId(), Currency.USD).orElseThrow();
-//        assertThat(finalBalance.getAmount()).isEqualByComparingTo("0.00");
-        // Verify the LessonStudent record is gone
-        assertThat(lessonStudentRepository.findAll()).isEmpty();
+        assertThat(lessonRepository.findById(lessonId)).isEmpty();
+        assertThat(balanceQueryService.getAllBalancesForStudent(studentA.getId()).getOrDefault(Currency.USD, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void test_fullStudentLifecycle() throws Exception {
-        // 1. Create a student
+        // 1. Create student
         mockMvc.perform(post("/students/create")
-                        .param("firstName", "Temp")
+                        .param("firstName", "Lifecycle")
                         .param("lastName", "Student")
                         .param("priceIndividual", "100.00")
                         .param("priceGroup", "80.00")
@@ -294,19 +299,39 @@ public class StudentLessonFlowIT {
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
-        Student student = studentRepository.findAll().getFirst();
-        Long studentId = student.getId();
+        Student student = studentRepository.findAll().stream()
+                .filter(s -> s.getLastName().equals("Student"))
+                .findFirst()
+                .orElseThrow();
 
-        // 2. Add a lesson for the student
+        Long sId = student.getId();
+
+        // 2. Add lesson
         mockMvc.perform(post("/lessons/create")
                         .param("lessonDate", "2025-11-20")
-                        .param("selectedStudentIds", studentId.toString())
+                        .param("selectedStudentIds", sId.toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
-        // 3. Make a payment for the student
+        Long lessonId = lessonRepository.findAll().stream()
+                .filter(l -> l.getLessonDate().equals(LocalDate.of(2025, 11, 20)))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+
+        // 3. Mark COMPLETED
+        mockMvc.perform(post("/lessons/update/" + lessonId)
+                        .param("lessonDate", "2025-11-20")
+                        .param("studentUpdates[0].studentId", sId.toString())
+                        .param("studentUpdates[0].status", "COMPLETED")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        assertThat(balanceQueryService.getAllBalancesForStudent(sId).get(Currency.USD)).isEqualByComparingTo("-100.00");
+
+        // 4. Make payment
         mockMvc.perform(post("/payments/create")
-                        .param("studentId", studentId.toString())
+                        .param("studentId", sId.toString())
                         .param("amount", "100.00")
                         .param("currency", "USD")
                         .param("paymentDate", "2025-11-20")
@@ -314,31 +339,23 @@ public class StudentLessonFlowIT {
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection());
 
-        // 4. Verify the lesson is paid
-        LessonStudent lessonStudent = lessonStudentRepository.findAll().getFirst();
-//        assertThat(lessonStudent.getPaymentStatus()).isEqualTo(PaymentStatus.PAID);
-//        Balance balance = balanceRepository.findByStudentIdAndCurrency(studentId, Currency.USD).orElseThrow();
-//        assertThat(balance.getAmount()).isEqualByComparingTo("0.00");
+        assertThat(balanceQueryService.getAllBalancesForStudent(sId).getOrDefault(Currency.USD, BigDecimal.ZERO)).isEqualByComparingTo(BigDecimal.ZERO);
 
-        // 5. Deactivate the student
-        mockMvc.perform(post("/students/deactivate/{id}", studentId)
+        // 5. Deactivate
+        mockMvc.perform(post("/students/deactivate/" + sId)
                         .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/students/list"));
+                .andExpect(status().is3xxRedirection());
 
-        Student deactivatedStudent = studentRepository.findById(studentId).orElseThrow();
-        assertThat(deactivatedStudent.isActive()).isFalse();
+        assertTrue(studentRepository.findById(sId).isPresent());
+        assertThat(studentRepository.findById(sId).get().isActive()).isFalse();
 
-        // 6. Hard-delete the student
-        mockMvc.perform(post("/students/hard-delete/{id}", studentId)
+        // 6. Hard-delete
+        mockMvc.perform(post("/students/hard-delete/" + sId)
                         .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/students/list"));
+                .andExpect(status().is3xxRedirection());
 
-        // 7. Verify all associated data is gone
-        assertThat(studentRepository.findById(studentId)).isEmpty();
-//        assertThat(balanceRepository.findByStudentId(studentId)).isEmpty();
-        assertThat(paymentRepository.findAll()).noneMatch(p -> p.getStudent().getId().equals(studentId));
-        assertThat(lessonStudentRepository.findAll()).noneMatch(ls -> ls.getStudent().getId().equals(studentId));
+        assertThat(studentRepository.findById(sId)).isEmpty();
+        assertThat(paymentRepository.findAll().stream().anyMatch(p -> p.getStudent().getId().equals(sId))).isFalse();
+        assertThat(lessonStudentRepository.findAll().stream().anyMatch(ls -> ls.getStudent().getId().equals(sId))).isFalse();
     }
 }

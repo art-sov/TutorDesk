@@ -112,10 +112,10 @@ public class DataJpaTestSetupTest {
         BalanceTransaction balanceTransaction = entityManager.find(BalanceTransaction.class, 1L);
         assertThat(balanceTransaction).isNotNull();
         assertThat(balanceTransaction.getTransactionDateTime()).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 0));
-        assertThat(balanceTransaction.getType()).isEqualTo(TransactionType.STUDENT_CREATED);
-        assertThat(balanceTransaction.getAmount()).isEqualByComparingTo(new BigDecimal("0.00"));
+        assertThat(balanceTransaction.getType()).isEqualTo(TransactionType.PAYMENT_RECEIVED);
+        assertThat(balanceTransaction.getAmount()).isEqualByComparingTo(new BigDecimal("10.00"));
         assertThat(balanceTransaction.getCurrency()).isEqualTo(Currency.USD);
-        assertThat(balanceTransaction.getSourceEntity()).isEqualTo(TransactionSource.STUDENT);
+        assertThat(balanceTransaction.getSourceEntity()).isEqualTo(TransactionSource.PAYMENT);
         assertThat(balanceTransaction.getSourceId()).isEqualTo(1L);
         assertThat(balanceTransaction.getStudent()).isNotNull();
     }
