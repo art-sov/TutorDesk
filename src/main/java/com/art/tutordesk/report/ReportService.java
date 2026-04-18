@@ -1,6 +1,9 @@
 package com.art.tutordesk.report;
 
 import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.LessonStudentStatus;
+import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
 import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
@@ -14,9 +17,12 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +34,7 @@ public class ReportService {
     private final StudentRepository studentRepository;
     private final PaymentRepository paymentRepository;
     private final LessonStudentRepository lessonStudentRepository;
+    private final PaymentStatusUtil paymentStatusUtil;
 
     public long getLessonsThisMonthCount() {
         LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
@@ -60,24 +67,54 @@ public class ReportService {
                 startDate, endDate, studentIds, includeLessons, includePayments);
         List<ReportItemDto> reportItems = new ArrayList<>();
 
+        List<LessonStudent> reportLessons = includeLessons ?
+                lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds) :
+                Collections.emptyList();
+
+        List<Payment> reportPayments = includePayments ?
+                paymentRepository.findByFilters(startDate, endDate, studentIds) :
+                Collections.emptyList();
+
+        // If we include lessons, we need to calculate their payment status
+        Map<Long, PaymentStatus> lessonPaymentStatusMap = new HashMap<>();
+        if (includeLessons && !reportLessons.isEmpty()) {
+            Set<Long> involvedStudentIds = reportLessons.stream()
+                    .map(ls -> ls.getStudent().getId())
+                    .collect(Collectors.toSet());
+
+            for (Long studentId : involvedStudentIds) {
+                // To calculate correctly, we need ALL historical lessons and payments for this student
+                List<LessonStudent> allStudentLessons = lessonStudentRepository.findAllByStudentId(studentId);
+                List<Payment> allStudentPayments = paymentRepository.findAllByStudentId(studentId);
+
+                Map<Long, PaymentStatus> studentLessonStatuses = paymentStatusUtil.calculatePaymentStatuses(allStudentLessons, allStudentPayments);
+                lessonPaymentStatusMap.putAll(studentLessonStatuses);
+            }
+        }
+
         if (includeLessons) {
-            List<LessonStudent> lessons = lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
-            log.debug("Found {} lessons for report criteria.", lessons.size());
-            lessons.stream()
-                    .map(ls -> ReportItemDto.builder()
+            log.debug("Found {} lessons for report criteria.", reportLessons.size());
+            reportLessons.stream()
+                    .map(ls -> {
+                        PaymentStatus paymentStatus = null;
+                        if (ls.getStatus() == LessonStudentStatus.COMPLETED || ls.getStatus() == LessonStudentStatus.NOT_ATTENDED) {
+                            paymentStatus = lessonPaymentStatusMap.getOrDefault(ls.getId(), PaymentStatus.UNPAID);
+                        }
+                        return ReportItemDto.builder()
                             .studentName(ls.getStudent().getFirstName() + " " + ls.getStudent().getLastName())
                             .itemType(ReportItemDto.ItemType.LESSON)
                             .currency(ls.getCurrency())
                             .amount(ls.getPrice())
                             .date(ls.getLesson().getLessonDate())
-                            .build())
+                            .paymentStatus(paymentStatus)
+                            .build();
+                    })
                     .forEach(reportItems::add);
         }
 
         if (includePayments) {
-            List<Payment> payments = paymentRepository.findByFilters(startDate, endDate, studentIds);
-            log.debug("Found {} payments for report criteria.", payments.size());
-            payments.stream()
+            log.debug("Found {} payments for report criteria.", reportPayments.size());
+            reportPayments.stream()
                     .map(p -> ReportItemDto.builder()
                             .studentName(p.getStudent().getFirstName() + " " + p.getStudent().getLastName())
                             .itemType(ReportItemDto.ItemType.PAYMENT)

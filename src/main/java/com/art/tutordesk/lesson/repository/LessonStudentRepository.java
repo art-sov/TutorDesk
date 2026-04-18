@@ -32,4 +32,6 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
     Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
 
     Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId);
+
+    List<LessonStudent> findAllByStudentId(Long studentId);
 }

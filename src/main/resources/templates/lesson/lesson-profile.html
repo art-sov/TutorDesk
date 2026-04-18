@@ -15,6 +15,10 @@
     <div class="card">
         <div class="card-body">
             <p class="card-text"><strong>Date:</strong> <span th:text="${lesson.lessonDate}"></span></p>
+            <p class="card-text" th:if="${lesson.paymentStatus != null}">
+                <strong>Payment Status:</strong>
+                <span th:text="${lesson.paymentStatus}" th:classappend="'status-' + ${#strings.toLowerCase(lesson.paymentStatus)}"></span>
+            </p>
 
             <h5 class="card-title mt-4">Students Enrolled</h5>
             <div class="table-responsive">
@@ -34,7 +38,11 @@
                             <span th:text="${lessonStudent.status}" th:classappend="'status-' + ${lessonStudent.status}"></span>
                         </td>
                         <td th:text="${lessonStudent.currency.symbol + #numbers.formatDecimal(lesson.studentAssociations.size() > 1 ? lessonStudent.priceGroup : lessonStudent.priceIndividual, 1, 2)}"></td>
-                        <td>Status</td>
+                        <td>
+                            <span th:if="${lessonStudent.paymentStatus != null}"
+                                  th:text="${lessonStudent.paymentStatus}"
+                                  th:classappend="'status-' + ${#strings.toLowerCase(lessonStudent.paymentStatus)}"></span>
+                        </td>
                     </tr>
                     <tr th:if="${lesson.studentAssociations.isEmpty()}">
                         <td colspan="3" style="text-align: center;">No students enrolled.</td>

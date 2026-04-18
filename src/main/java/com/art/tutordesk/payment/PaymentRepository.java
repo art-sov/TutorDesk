@@ -35,4 +35,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             WHERE p.student = :student AND p.currency = :currency
             """)
     BigDecimal sumPayments(@Param("student") Student student, @Param("currency") Currency currency);
+
+    List<Payment> findAllByStudentId(Long studentId);
 }

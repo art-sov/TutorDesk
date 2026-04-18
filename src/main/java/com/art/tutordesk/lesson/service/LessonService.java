@@ -3,12 +3,16 @@ package com.art.tutordesk.lesson.service;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
 import com.art.tutordesk.lesson.LessonStudentStatus;
+import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentUpdateDTO;
 import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.repository.LessonRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
+import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,17 +39,79 @@ public class LessonService {
     private final LessonStudentService lessonStudentService;
     private final LessonMapper lessonMapper;
     private final LessonBalanceService lessonBalanceService;
+    private final PaymentRepository paymentRepository;
+    private final LessonStudentRepository lessonStudentRepository;
+    private final PaymentStatusUtil paymentStatusUtil;
 
     public List<LessonListDTO> getLessonsByDateRange(LocalDate startDate, LocalDate endDate) {
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+        
+        if (CollectionUtils.isEmpty(lessons)) {
+            return List.of();
+        }
+
         return lessons.stream()
-                .map(lessonMapper::toLessonListDTO)
+                .map(lesson -> {
+                    LessonListDTO dto = lessonMapper.toLessonListDTO(lesson);
+                    dto.setPaymentStatus(calculateOverallPaymentStatus(lesson));
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 
     public LessonProfileDTO getLessonById(Long id) {
         Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new RuntimeException("Lesson not found with id: " + id));
-        return lessonMapper.toLessonProfileDTO(lesson);
+        LessonProfileDTO dto = lessonMapper.toLessonProfileDTO(lesson);
+        
+        Map<Long, PaymentStatus> studentPaymentStatusMap = calculateStudentPaymentStatuses(lesson);
+        
+        // Fill overall status
+        List<PaymentStatus> statuses = lesson.getLessonStudents().stream()
+                .filter(ls -> ls.getStatus() == LessonStudentStatus.COMPLETED || ls.getStatus() == LessonStudentStatus.NOT_ATTENDED)
+                .map(ls -> studentPaymentStatusMap.getOrDefault(ls.getId(), PaymentStatus.UNPAID))
+                .collect(Collectors.toList());
+        dto.setPaymentStatus(statuses.isEmpty() ? null : paymentStatusUtil.calculateOverallLessonPaymentStatus(statuses));
+
+        // Fill individual statuses for the profile view
+        if (!CollectionUtils.isEmpty(dto.getStudentAssociations())) {
+            dto.getStudentAssociations().forEach(lsDto -> {
+                // Only set status for chargeable lessons
+                if (lsDto.getStatus() == LessonStudentStatus.COMPLETED || lsDto.getStatus() == LessonStudentStatus.NOT_ATTENDED) {
+                    lsDto.setPaymentStatus(studentPaymentStatusMap.getOrDefault(lsDto.getId(), PaymentStatus.UNPAID));
+                } else {
+                    lsDto.setPaymentStatus(null);
+                }
+            });
+        }
+        
+        return dto;
+    }
+
+    private Map<Long, PaymentStatus> calculateStudentPaymentStatuses(Lesson lesson) {
+        if (CollectionUtils.isEmpty(lesson.getLessonStudents())) {
+            return Map.of();
+        }
+
+        Map<Long, PaymentStatus> studentPaymentStatusMap = new HashMap<>();
+        for (LessonStudent ls : lesson.getLessonStudents()) {
+            Long studentId = ls.getStudent().getId();
+            studentPaymentStatusMap.putAll(paymentStatusUtil.calculatePaymentStatuses(
+                    lessonStudentRepository.findAllByStudentId(studentId),
+                    paymentRepository.findAllByStudentId(studentId)
+            ));
+        }
+        return studentPaymentStatusMap;
+    }
+
+    private PaymentStatus calculateOverallPaymentStatus(Lesson lesson) {
+        Map<Long, PaymentStatus> studentPaymentStatusMap = calculateStudentPaymentStatuses(lesson);
+
+        List<PaymentStatus> statuses = lesson.getLessonStudents().stream()
+                .filter(ls -> ls.getStatus() == LessonStudentStatus.COMPLETED || ls.getStatus() == LessonStudentStatus.NOT_ATTENDED)
+                .map(ls -> studentPaymentStatusMap.getOrDefault(ls.getId(), PaymentStatus.UNPAID))
+                .collect(Collectors.toList());
+
+        return statuses.isEmpty() ? null : paymentStatusUtil.calculateOverallLessonPaymentStatus(statuses);
     }
 
     @Transactional

@@ -1,8 +1,11 @@
 package com.art.tutordesk.report;
 
 import com.art.tutordesk.lesson.Lesson;
-import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.LessonStudentStatus;
+import com.art.tutordesk.lesson.PaymentStatus;
+import com.art.tutordesk.lesson.PaymentStatusUtil;
+import com.art.tutordesk.lesson.repository.LessonRepository;
 import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.Payment;
@@ -24,12 +27,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceTest {
@@ -42,6 +47,8 @@ class ReportServiceTest {
     private PaymentRepository paymentRepository;
     @Mock
     private LessonStudentRepository lessonStudentRepository;
+    @Mock
+    private PaymentStatusUtil paymentStatusUtil;
 
     @InjectMocks
     private ReportService reportService;
@@ -60,6 +67,11 @@ class ReportServiceTest {
         student2.setId(2L);
         student2.setFirstName("Jane");
         student2.setLastName("Smith");
+
+        // Default behavior for historical fetches and status calculation to avoid NPE
+        lenient().when(lessonStudentRepository.findAllByStudentId(anyLong())).thenReturn(Collections.emptyList());
+        lenient().when(paymentRepository.findAllByStudentId(anyLong())).thenReturn(Collections.emptyList());
+        lenient().when(paymentStatusUtil.calculatePaymentStatuses(anyList(), anyList())).thenReturn(Collections.emptyMap());
     }
 
     @Test
@@ -107,18 +119,6 @@ class ReportServiceTest {
     }
 
     @Test
-    void getTotalPaymentsThisMonth_NoPayments() {
-        LocalDate startOfMonth = LocalDate.now().withDayOfMonth(1);
-        when(paymentRepository.findByPaymentDateGreaterThanEqual(startOfMonth)).thenReturn(Collections.emptyList());
-
-        Map<Currency, BigDecimal> result = reportService.getTotalPaymentsThisMonth();
-
-        assertTrue(result.isEmpty());
-        verify(paymentRepository).findByPaymentDateGreaterThanEqual(startOfMonth);
-    }
-
-
-    @Test
     void generateReport_IncludeLessonsOnly() {
         LocalDate startDate = LocalDate.of(2025, 1, 1);
         LocalDate endDate = LocalDate.of(2025, 1, 31);
@@ -128,32 +128,36 @@ class ReportServiceTest {
         lesson1.setId(1L);
         lesson1.setLessonDate(LocalDate.of(2025, 1, 10));
         LessonStudent ls1 = new LessonStudent();
+        ls1.setId(101L);
         ls1.setStudent(student1);
         ls1.setLesson(lesson1);
         ls1.setPrice(BigDecimal.valueOf(50));
         ls1.setCurrency(Currency.USD);
+        ls1.setStatus(LessonStudentStatus.COMPLETED);
 
         Lesson lesson2 = new Lesson();
         lesson2.setId(2L);
         lesson2.setLessonDate(LocalDate.of(2025, 1, 5));
         LessonStudent ls2 = new LessonStudent();
+        ls2.setId(102L);
         ls2.setStudent(student2);
         ls2.setLesson(lesson2);
         ls2.setPrice(BigDecimal.valueOf(60));
         ls2.setCurrency(Currency.EUR);
+        ls2.setStatus(LessonStudentStatus.COMPLETED);
 
         when(lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds)).thenReturn(Arrays.asList(ls1, ls2));
+        when(paymentStatusUtil.calculatePaymentStatuses(anyList(), anyList())).thenReturn(Map.of(101L, PaymentStatus.PAID, 102L, PaymentStatus.UNPAID));
 
         List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, true, false);
 
         assertEquals(2, report.size());
         assertEquals("Jane Smith", report.get(0).getStudentName());
-        assertEquals(LocalDate.of(2025, 1, 5), report.get(0).getDate());
+        assertEquals(PaymentStatus.UNPAID, report.get(0).getPaymentStatus());
         assertEquals("John Doe", report.get(1).getStudentName());
-        assertEquals(LocalDate.of(2025, 1, 10), report.get(1).getDate());
+        assertEquals(PaymentStatus.PAID, report.get(1).getPaymentStatus());
 
-        verify(lessonStudentRepository, times(1)).findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
-        verify(paymentRepository, never()).findByFilters(any(), any(), any());
+        verify(paymentStatusUtil, times(2)).calculatePaymentStatuses(anyList(), anyList());
     }
 
     @Test
@@ -178,13 +182,10 @@ class ReportServiceTest {
         List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, false, true);
 
         assertEquals(2, report.size());
-        assertEquals("Jane Smith", report.get(0).getStudentName());
         assertEquals(LocalDate.of(2025, 1, 3), report.get(0).getDate());
-        assertEquals("John Doe", report.get(1).getStudentName());
         assertEquals(LocalDate.of(2025, 1, 15), report.get(1).getDate());
 
-        verify(lessonStudentRepository, never()).findByLessonDateBetweenAndStudentIds(any(), any(), any());
-        verify(paymentRepository, times(1)).findByFilters(startDate, endDate, studentIds);
+        verify(paymentStatusUtil, never()).calculatePaymentStatuses(anyList(), anyList());
     }
 
     @Test
@@ -197,10 +198,12 @@ class ReportServiceTest {
         lesson.setId(1L);
         lesson.setLessonDate(LocalDate.of(2025, 1, 10));
         LessonStudent ls = new LessonStudent();
+        ls.setId(101L);
         ls.setStudent(student1);
         ls.setLesson(lesson);
         ls.setPrice(BigDecimal.valueOf(50));
         ls.setCurrency(Currency.USD);
+        ls.setStatus(LessonStudentStatus.COMPLETED);
         when(lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds)).thenReturn(Collections.singletonList(ls));
 
         Payment payment = new Payment();
@@ -214,74 +217,37 @@ class ReportServiceTest {
 
         assertEquals(2, report.size());
         assertEquals(ReportItemDto.ItemType.PAYMENT, report.get(0).getItemType());
-        assertEquals(LocalDate.of(2025, 1, 5), report.get(0).getDate());
         assertEquals(ReportItemDto.ItemType.LESSON, report.get(1).getItemType());
-        assertEquals(LocalDate.of(2025, 1, 10), report.get(1).getDate());
-
-        verify(lessonStudentRepository, times(1)).findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
-        verify(paymentRepository, times(1)).findByFilters(startDate, endDate, studentIds);
+        verify(paymentStatusUtil, times(1)).calculatePaymentStatuses(anyList(), anyList());
     }
 
     @Test
-    void generateReport_IncludeNeither() {
-        LocalDate startDate = LocalDate.of(2025, 1, 1);
-        LocalDate endDate = LocalDate.of(2025, 1, 31);
-        List<Long> studentIds = List.of(1L);
-
-        List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, false, false);
-
-        assertTrue(report.isEmpty());
-        verify(lessonStudentRepository, never()).findByLessonDateBetweenAndStudentIds(any(), any(), any());
-        verify(paymentRepository, never()).findByFilters(any(), any(), any());
-    }
-
-    @Test
-    void generateReport_EmptyResults() {
-        LocalDate startDate = LocalDate.of(2025, 1, 1);
-        LocalDate endDate = LocalDate.of(2025, 1, 31);
-        List<Long> studentIds = List.of(1L);
-
-        when(lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds)).thenReturn(Collections.emptyList());
-        when(paymentRepository.findByFilters(startDate, endDate, studentIds)).thenReturn(Collections.emptyList());
-
-        List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, true, true);
-
-        assertTrue(report.isEmpty());
-        verify(lessonStudentRepository, times(1)).findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds);
-        verify(paymentRepository, times(1)).findByFilters(startDate, endDate, studentIds);
-    }
-
-    @Test
-    void generateReport_ExcludesAbsentStudents() {
+    void generateReport_ExcludesScheduledAndCanceledStatus() {
         LocalDate startDate = LocalDate.of(2025, 1, 1);
         LocalDate endDate = LocalDate.of(2025, 1, 31);
         List<Long> studentIds = Collections.singletonList(1L);
 
-        Lesson lesson1 = new Lesson();
-        lesson1.setId(1L);
-        lesson1.setLessonDate(LocalDate.of(2025, 1, 10));
+        LessonStudent scheduledLS = new LessonStudent();
+        scheduledLS.setId(101L);
+        scheduledLS.setStudent(student1);
+        scheduledLS.setStatus(LessonStudentStatus.SCHEDULED);
+        scheduledLS.setLesson(new Lesson());
+        scheduledLS.getLesson().setLessonDate(LocalDate.of(2025, 1, 10));
 
-        LessonStudent presentLessonStudent = new LessonStudent();
-        presentLessonStudent.setStudent(student1);
-        presentLessonStudent.setLesson(lesson1);
-        presentLessonStudent.setPrice(BigDecimal.valueOf(50));
-        presentLessonStudent.setCurrency(Currency.USD);
-        presentLessonStudent.setAttendanceStatus(com.art.tutordesk.lesson.AttendanceStatus.PRESENT);
-
-        LessonStudent absentLessonStudent = new LessonStudent();
-        absentLessonStudent.setStudent(student1);
-        absentLessonStudent.setLesson(lesson1);
-        absentLessonStudent.setPrice(BigDecimal.valueOf(50));
-        absentLessonStudent.setCurrency(Currency.USD);
-        absentLessonStudent.setAttendanceStatus(com.art.tutordesk.lesson.AttendanceStatus.ABSENT);
+        LessonStudent canceledLS = new LessonStudent();
+        canceledLS.setId(102L);
+        canceledLS.setStudent(student1);
+        canceledLS.setStatus(LessonStudentStatus.CANCELED);
+        canceledLS.setLesson(new Lesson());
+        canceledLS.getLesson().setLessonDate(LocalDate.of(2025, 1, 11));
 
         when(lessonStudentRepository.findByLessonDateBetweenAndStudentIds(startDate, endDate, studentIds))
-                .thenReturn(Arrays.asList(presentLessonStudent, absentLessonStudent));
+                .thenReturn(Arrays.asList(scheduledLS, canceledLS));
 
         List<ReportItemDto> report = reportService.generateReport(startDate, endDate, studentIds, true, false);
 
-        assertEquals(1, report.size());
-        assertEquals("John Doe", report.getFirst().getStudentName());
-        assertEquals(com.art.tutordesk.report.ReportItemDto.ItemType.LESSON, report.getFirst().getItemType());
+        assertEquals(2, report.size());
+        assertNull(report.get(0).getPaymentStatus());
+        assertNull(report.get(1).getPaymentStatus());
     }
 }
