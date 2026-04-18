@@ -15,5 +15,6 @@ public interface LessonStudentMapper {
     @Mapping(source = "student.priceIndividual", target = "priceIndividual")
     @Mapping(source = "student.priceGroup", target = "priceGroup")
     @Mapping(source = "status", target = "status")
+    @Mapping(source = "currency", target = "currency")
     LessonStudentDto toLessonStudentDto(LessonStudent lessonStudent);
 }

@@ -80,6 +80,7 @@
 
     <script th:inline="javascript">
         const allStudents = /*[[${allStudents}]]*/[];
+        const currencySymbols = /*[[${currencySymbols}]]*/{};
         const studentMap = new Map()
 
         for (const student of allStudents) {
@@ -107,9 +108,10 @@
                         const priceDisplay = row.querySelector('.student-price-display');
                         const rawPrice = isGroup ? student.priceGroup : student.priceIndividual;
                         const formattedPrice = Number(rawPrice).toFixed(2);
+                        const symbol = currencySymbols[student.currency] || '';
 
                         if (priceDisplay) {
-                            priceDisplay.textContent = formattedPrice;
+                            priceDisplay.textContent = symbol + formattedPrice;
                         }
                     }
                 });

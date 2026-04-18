@@ -6,6 +6,7 @@ import com.art.tutordesk.lesson.dto.LessonStudentDto;
 import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.service.StudentService;
+import com.art.tutordesk.payment.Currency;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -22,7 +23,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -51,6 +54,7 @@ public class LessonViewController {
     public String newLessonForm(Model model) {
         model.addAttribute("lesson", new Lesson());
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
+        model.addAttribute("currencySymbols", getCurrencySymbolsMap());
         return "lesson/add-lesson";
     }
 
@@ -66,6 +70,7 @@ public class LessonViewController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
+            model.addAttribute("currencySymbols", getCurrencySymbolsMap());
             return "lesson/add-lesson";
         }
         lessonService.saveLesson(lesson, selectedStudentIds);
@@ -92,6 +97,7 @@ public class LessonViewController {
         LessonProfileDTO lesson = lessonService.getLessonById(id);
         model.addAttribute("lesson", lesson); // Contains studentAssociations for initial table render
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
+        model.addAttribute("currencySymbols", getCurrencySymbolsMap());
 
         // Get IDs of students already associated with this lesson for multi-select pre-selection
         List<Long> selectedStudentIds = lesson.getStudentAssociations().stream()
@@ -118,6 +124,7 @@ public class LessonViewController {
             LessonProfileDTO lesson = lessonService.getLessonById(id);
             model.addAttribute("lesson", lesson);
             model.addAttribute("allStudents", studentService.getAllActiveStudents());
+            model.addAttribute("currencySymbols", getCurrencySymbolsMap());
             List<Long> selectedStudentIds = lesson.getStudentAssociations().stream()
                     .map(LessonStudentDto::getStudentId)
                     .collect(Collectors.toList());
@@ -135,5 +142,10 @@ public class LessonViewController {
         lessonService.deleteLesson(id);
         redirectAttributes.addFlashAttribute("message", "Lesson deleted successfully!");
         return "redirect:/lessons/list";
+    }
+
+    private Map<String, String> getCurrencySymbolsMap() {
+        return Arrays.stream(Currency.values())
+                .collect(Collectors.toMap(Enum::name, Currency::getSymbol));
     }
 }
