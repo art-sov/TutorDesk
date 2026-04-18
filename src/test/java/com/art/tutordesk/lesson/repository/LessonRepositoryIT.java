@@ -24,12 +24,12 @@ public class LessonRepositoryIT {
     @Test
     void countByLessonDateGreaterThanEqual_shouldReturnCorrectCount() {
         long countAll = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 1));
-        long countThree = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 2));
-        long countTwo = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 3));
-        long countOne = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 6));
-        long countNone = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 11));
+        long countThree = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 5));
+        long countTwo = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 1, 10));
+        long countOne = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 2, 1));
+        long countNone = lessonRepository.countByLessonDateGreaterThanEqual(LocalDate.of(2025, 2, 11));
 
-        assertThat(countAll).isEqualTo(4);
+        assertThat(countAll).isEqualTo(5);
         assertThat(countThree).isEqualTo(3);
         assertThat(countTwo).isEqualTo(2);
         assertThat(countOne).isEqualTo(1);
@@ -63,8 +63,8 @@ public class LessonRepositoryIT {
 
     @Test
     void findByLessonDateBetween_shouldReturnEmptyListForNoMatches() {
-        LocalDate startDate = LocalDate.of(2025, 2, 1);
-        LocalDate endDate = LocalDate.of(2025, 2, 28);
+        LocalDate startDate = LocalDate.of(2025, 3, 1);
+        LocalDate endDate = LocalDate.of(2025, 3, 31);
 
         List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
 
@@ -72,19 +72,34 @@ public class LessonRepositoryIT {
         assertThat(lessons).isEmpty();
     }
 
-    @Test
-    void findByLessonDateBetween_shouldFetchStudentsEagerly() {
-        LocalDate startDate = LocalDate.of(2025, 1, 1);
-        LocalDate endDate = LocalDate.of(2025, 1, 1);
-
-        List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
-        Lesson lesson = lessons.getFirst();
-
-        // No LazyInitializationException should be thrown when accessing students
-        assertThat(lesson.getLessonStudents()).hasSize(2);
-        List<Long> studentIds = lesson.getLessonStudents().stream()
-                .map(ls -> ls.getStudent().getId())
-                .collect(Collectors.toList());
-        assertThat(studentIds).containsExactlyInAnyOrder(1L, 2L);
+        @Test
+        void findByLessonDateBetween_shouldFetchStudentsEagerly() {
+            LocalDate startDate = LocalDate.of(2025, 1, 1);
+            LocalDate endDate = LocalDate.of(2025, 1, 1);
+    
+            List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+            Lesson lesson = lessons.getFirst();
+    
+            // No LazyInitializationException should be thrown when accessing students
+            assertThat(lesson.getLessonStudents()).hasSize(2);
+            List<Long> studentIds = lesson.getLessonStudents().stream()
+                    .map(ls -> ls.getStudent().getId())
+                    .collect(Collectors.toList());
+            assertThat(studentIds).containsExactlyInAnyOrder(1L, 2L);
+        }
+    
+        @Test
+        void findByLessonDateBetween_shouldReturnLessonsInAscendingOrder() {
+            LocalDate startDate = LocalDate.of(2025, 1, 1);
+            LocalDate endDate = LocalDate.of(2025, 1, 10);
+    
+            List<Lesson> lessons = lessonRepository.findByLessonDateBetween(startDate, endDate);
+    
+            assertThat(lessons).isNotNull();
+            assertThat(lessons).hasSize(4);
+            // Verify the order based on lesson_date: 2025-01-01 (ID 1), 2025-01-02 (ID 2), 2025-01-05 (ID 4), 2025-01-10 (ID 3)
+            assertThat(lessons.stream().map(Lesson::getId).collect(Collectors.toList()))
+                    .containsExactly(1L, 2L, 4L, 3L);
+        }
     }
-}
+    

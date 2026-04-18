@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <title>Edit Lesson</title>
@@ -7,32 +8,229 @@
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
-<div class="container">
-    <h2>Edit Lesson</h2>
-    <form th:action="@{/lessons/update/{id}(id=${lesson.id})}" th:object="${lesson}" method="post" novalidate>
-        <input type="hidden" th:field="*{id}" />
+    <div class="container">
+        <h2>Edit Lesson</h2>
+        <form th:action="@{/lessons/update/{id}(id=${lesson.id})}" method="post" novalidate>
+            <div class="mb-3">
+                <label for="lessonDate" class="form-label">Lesson Date</label>
+                <input type="date" class="form-control" id="lessonDate" name="lessonDate"
+                    th:value="${lesson.lessonDate}" required>
+            </div>
 
-        <div class="mb-3">
-            <label for="lessonDate" class="form-label">Lesson Date</label>
-            <input type="date" class="form-control" th:classappend="${#fields.hasErrors('lessonDate') ? 'is-invalid' : ''}" id="lessonDate" th:field="*{lessonDate}" required>
-            <div th:if="${#fields.hasErrors('lessonDate')}" th:errors="*{lessonDate}" class="invalid-feedback"></div>
-        </div>
-
-        <div class="mb-3">
-            <label for="students" class="form-label">Select Students</label>
-            <select multiple class="form-control" th:classappend="${#fields.hasGlobalErrors() ? 'is-invalid' : ''}" id="students" name="selectedStudentIds" size="5">
-                <option th:each="student : ${allStudents}"
-                        th:value="${student.id}"
+            <div class="mb-3">
+                <label for="students" class="form-label">Select Students</label>
+                <select multiple class="form-control" id="students" size="5">
+                    <option th:each="student : ${allStudents}" th:value="${student.id}"
                         th:text="${student.firstName + ' ' + student.lastName}"
                         th:selected="${#lists.contains(selectedStudentIds, student.id)}">
-                </option>
-            </select>
-            <div th:if="${#fields.hasGlobalErrors()}" class="invalid-feedback">At least one student must be selected for the lesson.</div>
-        </div>
+                    </option>
+                </select>
+            </div>
 
-        <button type="submit" class="btn btn-primary">Update Lesson</button>
-        <a th:href="@{/lessons/profile/{id}(id=${lesson.id})}" class="btn-secondary">Cancel</a>
-    </form>
-</div>
+            <h5 class="mt-4">Student Statuses</h5>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Status</th>
+                            <th>Price</th>
+                            <th style="width: 1%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-status-table-body">
+                        <!-- Initially populated by Thymeleaf -->
+                        <tr th:each="lessonStudent, iterStat : ${lesson.studentAssociations}"
+                            th:data-student-id="${lessonStudent.studentId}">
+                            <td>
+                                <span
+                                    th:text="${lessonStudent.studentFirstName + ' ' + lessonStudent.studentLastName}"></span>
+                                <input type="hidden" th:name="'studentUpdates[' + ${iterStat.index} + '].studentId'"
+                                    th:value="${lessonStudent.studentId}" />
+                            </td>
+                            <td>
+                                <select class="form-select lesson-student-status-select"
+                                    th:name="'studentUpdates[' + ${iterStat.index} + '].status'"
+                                    th:classappend="'status-' + ${lessonStudent.status}">
+                                    <option
+                                        th:each="status : ${T(com.art.tutordesk.lesson.LessonStudentStatus).values()}"
+                                        th:value="${status}" th:text="${status}"
+                                        th:selected="${status == lessonStudent.status}"
+                                        th:classappend="'status-' + ${status}">
+                                    </option>
+                                </select>
+                            </td>
+                            <td class="student-price-display">
+                                <!-- Will be updated by JS -->
+                                <span th:text="${lessonStudent.currency.symbol + #numbers.formatDecimal(lesson.studentAssociations.size() > 1 ? lessonStudent.priceGroup : lessonStudent.priceIndividual, 1, 2)}"></span>
+                            </td>
+                            <td>
+                                <button type="button" class="remove-student-btn"
+                                    th:data-student-id="${lessonStudent.studentId}">Remove</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Update Lesson</button>
+            <a th:href="@{/lessons/profile/{id}(id=${lesson.id})}" class="btn-secondary">Cancel</a>
+        </form>
+    </div>
+
+    <script th:inline="javascript">
+        const allStudents = /*[[${allStudents}]]*/[];
+        const currencySymbols = /*[[${currencySymbols}]]*/{};
+        const studentMap = new Map()
+
+        for (const student of allStudents) {
+            studentMap.set(student.id.toString(), student)
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const studentSelectElement = document.getElementById('students');
+            const tableBody = document.getElementById('student-status-table-body');
+
+            function getSelectedStudentIds() {
+                return Array.from(studentSelectElement.selectedOptions)
+                    .map(option => option.value.toString());
+            }
+
+            function refreshPrices() {
+                const selectedIds = getSelectedStudentIds();
+                const isGroup = selectedIds.length > 1;
+                const rows = tableBody.querySelectorAll('tr');
+
+                rows.forEach(row => {
+                    const studentId = row.getAttribute('data-student-id');
+                    const student = studentMap.get(studentId);
+                    if (student) {
+                        const priceDisplay = row.querySelector('.student-price-display');
+                        const rawPrice = isGroup ? student.priceGroup : student.priceIndividual;
+                        const formattedPrice = Number(rawPrice).toFixed(2);
+                        const symbol = currencySymbols[student.currency] || '';
+
+                        if (priceDisplay) {
+                            priceDisplay.textContent = symbol + formattedPrice;
+                        }
+                    }
+                });
+            }
+
+            function applyStatusColor(element) {
+                if (!element) return;
+
+                const classesToRemove = Array.from(element.classList)
+                    .filter(cls => cls.startsWith('status-'));
+                classesToRemove.forEach(cls => element.classList.remove(cls));
+
+                element.classList.add('status-' + element.value);
+
+                Array.from(element.options).forEach(option => {
+                    const optionClassesToRemove = Array.from(option.classList)
+                        .filter(cls => cls.startsWith('status-'));
+                    optionClassesToRemove.forEach(cls => option.classList.remove(cls));
+
+                    if (option.value == 'SCHEDULED') {
+                        option.classList.add('status-SCHEDULED-option')
+                    } else {
+                        option.classList.add('status-' + option.value);
+                    }
+                });
+            }
+
+            /**
+           * Re-indexes the name attributes of inputs in the table for correct Spring MVC binding.
+           * e.g., studentUpdates[0].studentId, studentUpdates[1].studentId, etc.
+            */
+            function reindexTable() {
+                const rows = tableBody.querySelectorAll('tr');
+                rows.forEach((row, index) => {
+                    const studentIdInput = row.querySelector('input[type="hidden"]');
+                    const statusSelect = row.querySelector('select');
+                    if (studentIdInput) studentIdInput.name = `studentUpdates[${index}].studentId`;
+                    if (statusSelect) statusSelect.name = `studentUpdates[${index}].status`;
+                });
+            }
+
+            function syncTableWithSelection() {
+                const selectedIds = getSelectedStudentIds();
+                const tableRows = tableBody.querySelectorAll('tr');
+                const tableIds = Array.from(tableRows).map(row => row.getAttribute('data-student-id'));
+
+                // Add new students
+                selectedIds.forEach(studentId => {
+                    if (!tableIds.includes(studentId)) {
+                        const student = studentMap.get(studentId);
+                        if (!student) return;
+
+                        const newRow = tableBody.insertRow();
+                        newRow.setAttribute('data-student-id', studentId);
+                        newRow.innerHTML = `
+                        <td>
+                            ${student.firstName} ${student.lastName}
+                            <input type="hidden" value="${studentId}" />
+                        </td>
+                        <td>
+                            <select class="form-select lesson-student-status-select">
+                                <option value="SCHEDULED" selected>SCHEDULED</option>
+                                <option value="COMPLETED">COMPLETED</option>
+                                <option value="CANCELED">CANCELED</option>
+                                <option value="NOT_ATTENDED">NOT_ATTENDED</option>
+                            </select>
+                        </td>
+                        <td class="student-price-display">
+                            <!-- Populated by refreshPrices -->
+                        </td>
+                        <td>
+                            <button type="button" class="remove-student-btn" data-student-id="${studentId}">Remove</button>
+                        </td>
+                    `;
+                        applyStatusColor(newRow.querySelector('.lesson-student-status-select'));
+                    }
+                });
+
+                // Remove old students
+                tableRows.forEach(row => {
+                    const studentId = row.getAttribute('data-student-id');
+                    if (!selectedIds.includes(studentId)) {
+                        row.remove();
+                    }
+                });
+
+                reindexTable();
+                refreshPrices();
+            }
+
+            // Event listener for the multi-select box
+            studentSelectElement.addEventListener('change', syncTableWithSelection);
+
+            // Event listener for remove buttons in the table
+            tableBody.addEventListener('click', function (event) {
+                if (event.target && event.target.classList.contains('remove-student-btn')) {
+                    const studentIdToRemove = event.target.getAttribute('data-student-id');
+                    Array.from(studentSelectElement.options).forEach(option => {
+                        if (option.value === studentIdToRemove) {
+                            option.selected = false;
+                        }
+                    });
+                    studentSelectElement.dispatchEvent(new Event('change'));
+                }
+            });
+
+            tableBody.addEventListener('change', function (event) {
+                // Handle status dropdown changes for any row
+                if (event.target && event.target.classList.contains('lesson-student-status-select')) {
+                    applyStatusColor(event.target);
+                }
+            });
+
+            // Initial re-index for server-rendered rows
+            reindexTable();
+            refreshPrices();
+            document.querySelectorAll('.lesson-student-status-select').forEach(applyStatusColor);
+        });
+    </script>
 </body>
+
 </html>

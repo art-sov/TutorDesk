@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-add-lesson-student-new-status-column
+      author: art-sov
+      changes:
+        - addColumn:
+            tableName: lesson_student
+            columns:
+              - column:
+                  name: status
+                  type: VARCHAR(255)
+                  defaultValue: "SCHEDULED"
+                  constraints:
+                    nullable: false

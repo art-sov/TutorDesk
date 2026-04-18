@@ -1,5 +1,10 @@
 package com.art.tutordesk.student.service;
 
+import com.art.tutordesk.balance.BalanceQueryService;
+import com.art.tutordesk.balance.BalanceTransactionService;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
+import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentDto;
 import com.art.tutordesk.student.StudentMapper;
@@ -8,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,20 +27,55 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final StudentHardDeleteService studentHardDeleteService;
     private final StudentMapper studentMapper;
+    private final BalanceTransactionService balanceTransactionService;
+    private final BalanceQueryService balanceQueryService;
 
     @Transactional
-    public StudentDto saveStudent(StudentDto studentDto) {
-        Student student;
-        if (studentDto.getId() == null) {
-            student = studentMapper.toStudent(studentDto);
-        } else {
-            student = getStudentEntityById(studentDto.getId());
-            studentMapper.updateStudentFromDto(studentDto, student);
-        }
+    public StudentDto createStudent(StudentDto studentDto) {
+        Student student = studentMapper.toStudent(studentDto);
         Student savedStudent = studentRepository.save(student);
-        log.info("Student saved: {id={}, firstName='{}', lastName='{}'}",
+        log.info("Student created: {id={}, firstName='{}', lastName='{}'}",
                 savedStudent.getId(), savedStudent.getFirstName(), savedStudent.getLastName());
+
+        balanceTransactionService.createBalanceTransaction(
+                savedStudent,
+                TransactionType.STUDENT_CREATED,
+                savedStudent.getCurrency(),
+                TransactionSource.STUDENT,
+                BigDecimal.ZERO,
+                savedStudent.getId()
+        );
+
         return studentMapper.toStudentDto(savedStudent);
+    }
+
+    @Transactional
+    public StudentDto updateStudent(StudentDto studentDto) {
+        if (studentDto.getId() == null) {
+            throw new IllegalArgumentException("Student ID cannot be null for update operation.");
+        }
+        Student existingStudent = getStudentEntityById(studentDto.getId());
+
+        Currency oldCurrency = existingStudent.getCurrency();
+
+        studentMapper.updateStudentFromDto(studentDto, existingStudent);
+        Student updatedStudent = studentRepository.save(existingStudent);
+        log.info("Student updated: {id={}, firstName='{}', lastName='{}'}",
+                updatedStudent.getId(), updatedStudent.getFirstName(), updatedStudent.getLastName());
+
+        if (oldCurrency != updatedStudent.getCurrency()) {
+            balanceTransactionService.createBalanceTransaction(
+                    updatedStudent,
+                    TransactionType.STUDENT_UPDATED,
+                    updatedStudent.getCurrency(),
+                    TransactionSource.STUDENT,
+                    BigDecimal.ZERO,
+                    updatedStudent.getId()
+            );
+            log.info("Initialized zero balance for student {} in new currency: {}", updatedStudent.getId(), updatedStudent.getCurrency());
+        }
+
+        return studentMapper.toStudentDto(updatedStudent);
     }
 
     public List<StudentDto> getAllActiveStudents() {
@@ -59,8 +101,10 @@ public class StudentService {
 
     @Transactional
     public void hardDeleteStudent(Long studentId) {
+        // Delete all associated balance transactions before hard deleting the student
+        balanceTransactionService.deleteTransactionsByStudentId(studentId);
         studentHardDeleteService.performHardDelete(studentId);
-        log.info("Student with ID {} hard deleted.", studentId);
+        log.info("Student with ID {} hard deleted, including associated balance transactions.", studentId);
     }
 
     @Transactional
@@ -74,7 +118,9 @@ public class StudentService {
 
     public StudentDto getStudentById(Long studentId) {
         Student student = getStudentEntityById(studentId);
-        return studentMapper.toStudentDto(student);
+        StudentDto studentDto = studentMapper.toStudentDto(student);
+        studentDto.setBalances(balanceQueryService.getAllBalancesForStudent(studentId));
+        return studentDto;
     }
 
     // Helper method to get Student entity, internal to service

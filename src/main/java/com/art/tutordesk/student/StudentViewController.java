@@ -1,6 +1,5 @@
 package com.art.tutordesk.student;
 
-import com.art.tutordesk.balance.BalanceService;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.service.StudentService;
 import jakarta.validation.Valid;
@@ -23,7 +22,6 @@ import java.util.List;
 public class StudentViewController {
 
     private final StudentService studentService;
-    private final BalanceService balanceService;
 
     @GetMapping("/new")
     public String showAddStudentForm(Model model) {
@@ -38,7 +36,7 @@ public class StudentViewController {
             model.addAttribute("currencies", Currency.values());
             return "student/add-student";
         }
-        studentService.saveStudent(studentDto);
+        studentService.createStudent(studentDto);
         return "redirect:/students/list";
     }
 
@@ -89,15 +87,14 @@ public class StudentViewController {
             return "student/edit-student";
         }
         studentDto.setId(id);
-        studentService.saveStudent(studentDto);
+        studentService.updateStudent(studentDto);
         return "redirect:/students/profile/{id}";
     }
 
     @GetMapping("/profile/{id}")
     public String showStudentProfile(@PathVariable Long id, Model model) {
-        StudentDto studentDto = studentService.getStudentById(id); // Returns StudentDto
-        model.addAttribute("student", studentDto); // Add DTO
-        model.addAttribute("balances", balanceService.getAllBalancesForStudent(id));
+        StudentDto studentDto = studentService.getStudentById(id);
+        model.addAttribute("student", studentDto);
         return "student/student-profile";
     }
 }

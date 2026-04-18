@@ -1,15 +1,14 @@
 package com.art.tutordesk.lesson;
 
-import com.art.tutordesk.lesson.dto.AttendanceUpdateRequest;
-import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
 import com.art.tutordesk.lesson.dto.LessonStudentDto;
+import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.service.LessonService;
 import com.art.tutordesk.student.service.StudentService;
+import com.art.tutordesk.payment.Currency;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.CollectionUtils;
@@ -18,15 +17,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -57,6 +54,7 @@ public class LessonViewController {
     public String newLessonForm(Model model) {
         model.addAttribute("lesson", new Lesson());
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
+        model.addAttribute("currencySymbols", getCurrencySymbolsMap());
         return "lesson/add-lesson";
     }
 
@@ -72,6 +70,7 @@ public class LessonViewController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
+            model.addAttribute("currencySymbols", getCurrencySymbolsMap());
             return "lesson/add-lesson";
         }
         lessonService.saveLesson(lesson, selectedStudentIds);
@@ -84,16 +83,23 @@ public class LessonViewController {
     public String showLessonProfile(@PathVariable Long id, Model model) {
         LessonProfileDTO lesson = lessonService.getLessonById(id);
         model.addAttribute("lesson", lesson);
+
+        // Calculate if the lesson can be deleted (all students must be SCHEDULED)
+        boolean canDeleteLesson = lesson.getStudentAssociations().stream()
+                                      .allMatch(ls -> ls.getStatus() == LessonStudentStatus.SCHEDULED);
+        model.addAttribute("canDeleteLesson", canDeleteLesson);
+
         return "lesson/lesson-profile";
     }
 
     @GetMapping("/edit/{id}")
     public String editLessonForm(@PathVariable Long id, Model model) {
         LessonProfileDTO lesson = lessonService.getLessonById(id);
-        model.addAttribute("lesson", lesson);
+        model.addAttribute("lesson", lesson); // Contains studentAssociations for initial table render
         model.addAttribute("allStudents", studentService.getAllActiveStudents());
+        model.addAttribute("currencySymbols", getCurrencySymbolsMap());
 
-        // Get IDs of students already associated with this lesson
+        // Get IDs of students already associated with this lesson for multi-select pre-selection
         List<Long> selectedStudentIds = lesson.getStudentAssociations().stream()
                 .map(LessonStudentDto::getStudentId)
                 .collect(Collectors.toList());
@@ -104,27 +110,29 @@ public class LessonViewController {
 
     @PostMapping("/update/{id}")
     public String updateLesson(@PathVariable Long id,
-                               @Valid @ModelAttribute Lesson lesson,
+                               @ModelAttribute LessonUpdateForm lessonUpdateForm,
                                BindingResult bindingResult,
-                               @RequestParam(value = "selectedStudentIds", required = false) List<Long> selectedStudentIds,
                                Model model,
                                RedirectAttributes redirectAttributes) {
-        if (CollectionUtils.isEmpty(selectedStudentIds)) {
+
+        if (lessonUpdateForm.getStudentUpdates() == null || lessonUpdateForm.getStudentUpdates().isEmpty()) {
             bindingResult.reject("lesson.students.empty", "At least one student must be selected for the lesson.");
         }
+
         if (bindingResult.hasErrors()) {
-            model.addAttribute("allStudents", studentService.getAllActiveStudents()); // Re-add students for form display
-            // Get IDs of students already associated with this lesson to pre-select them on error
-            LessonProfileDTO existingLesson = lessonService.getLessonById(id);
-            List<Long> preSelectedStudentIds = existingLesson.getStudentAssociations().stream()
+            // Repopulate model for the edit form if there are errors
+            LessonProfileDTO lesson = lessonService.getLessonById(id);
+            model.addAttribute("lesson", lesson);
+            model.addAttribute("allStudents", studentService.getAllActiveStudents());
+            model.addAttribute("currencySymbols", getCurrencySymbolsMap());
+            List<Long> selectedStudentIds = lesson.getStudentAssociations().stream()
                     .map(LessonStudentDto::getStudentId)
                     .collect(Collectors.toList());
-            model.addAttribute("selectedStudentIds", preSelectedStudentIds);
+            model.addAttribute("selectedStudentIds", selectedStudentIds);
             return "lesson/edit-lesson";
         }
 
-        lesson.setId(id);
-        lessonService.updateLesson(lesson, selectedStudentIds);
+        lessonService.updateLesson(id, lessonUpdateForm);
         redirectAttributes.addFlashAttribute("message", "Lesson updated successfully!");
         return "redirect:/lessons/profile/{id}";
     }
@@ -136,15 +144,8 @@ public class LessonViewController {
         return "redirect:/lessons/list";
     }
 
-    @ResponseBody
-    @PostMapping("/{lessonId}/students/{studentId}/attendance")
-    public ResponseEntity<Map<String, Object>> updateAttendance(@PathVariable Long lessonId,
-                                                                @PathVariable Long studentId,
-                                                                @RequestBody AttendanceUpdateRequest request) {
-        AttendanceUpdateResponse serviceResponse = lessonService.updateAttendance(lessonId, studentId, request.getStatus());
-        Map<String, Object> response = new HashMap<>();
-        response.put("newPrice", serviceResponse.getNewPrice());
-        response.put("newPaymentStatus", serviceResponse.getNewPaymentStatus());
-        return ResponseEntity.ok(response);
+    private Map<String, String> getCurrencySymbolsMap() {
+        return Arrays.stream(Currency.values())
+                .collect(Collectors.toMap(Enum::name, Currency::getSymbol));
     }
 }

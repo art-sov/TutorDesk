@@ -1,9 +1,7 @@
 package com.art.tutordesk.lesson.repository;
 
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
-import com.art.tutordesk.student.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,10 +24,6 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
             @Param("endDate") LocalDate endDate,
             @Param("studentIds") List<Long> studentIds);
 
-    List<LessonStudent> findAllByStudentAndCurrencyAndPaymentStatusNotOrderByLessonLessonDateAsc(Student student,
-                                                                                                 Currency currency,
-                                                                                                 PaymentStatus paymentStatus);
-
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM LessonStudent ls WHERE ls.student.id = :studentId")
     void deleteAllByStudentId(@Param("studentId") Long studentId);
@@ -38,4 +32,6 @@ public interface LessonStudentRepository extends JpaRepository<LessonStudent, Lo
     Set<Currency> findCurrenciesByStudentId(@Param("studentId") Long studentId);
 
     Optional<LessonStudent> findByLessonIdAndStudentId(Long lessonId, Long studentId);
+
+    List<LessonStudent> findAllByStudentId(Long studentId);
 }

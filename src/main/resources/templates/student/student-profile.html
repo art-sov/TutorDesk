@@ -17,11 +17,11 @@
             <p class="card-text"><strong>Knowledge Level:</strong> <span th:text="${student.knowledgeLevel}"></span></p>
             <p class="card-text" th:if="${student.priceIndividual != null}"><strong>Individual Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.priceIndividual, 1, 0)}"></span></p>
             <p class="card-text" th:if="${student.priceGroup != null}"><strong>Group Price:</strong> <span th:text="${student.currency.symbol + #numbers.formatDecimal(student.priceGroup, 1, 0)}"></span></p>
-            <div th:each="balance : ${balances}">
+            <div th:each="entry : ${student.balances}">
                 <p class="card-text">
                     <strong>Balance:</strong>
-                    <span th:text="${balance.currency.symbol + ' ' + #numbers.formatDecimal(balance.amount, 1, 2)}"
-                          th:classappend="${balance.amount.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-success' : (balance.amount.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'text-danger' : 'text-primary')}">
+                    <span th:text="${entry.key.symbol + #numbers.formatDecimal(entry.value, 1, 2)}"
+                          th:classappend="${entry.value.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'text-success' : (entry.value.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'text-danger' : 'text-primary')}">
                     </span>
                 </p>
             </div>

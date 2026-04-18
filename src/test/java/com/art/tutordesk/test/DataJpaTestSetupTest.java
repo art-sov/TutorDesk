@@ -1,9 +1,10 @@
 package com.art.tutordesk.test;
 
-import com.art.tutordesk.balance.Balance;
+import com.art.tutordesk.balance.BalanceTransaction;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
-import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.payment.Payment;
 import com.art.tutordesk.payment.PaymentMethod;
@@ -17,6 +18,7 @@ import org.springframework.test.context.jdbc.Sql;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -67,7 +69,6 @@ public class DataJpaTestSetupTest {
     void whenLessonStudentsAreLoaded_thenVerifyDetailsAndRelationships() {
         LessonStudent ls1 = entityManager.find(LessonStudent.class, 1L);
         assertThat(ls1).isNotNull();
-        assertThat(ls1.getPaymentStatus()).isEqualTo(PaymentStatus.UNPAID);
         assertThat(ls1.getPrice()).isEqualByComparingTo(new BigDecimal("25.00"));
         assertThat(ls1.getCurrency()).isEqualTo(Currency.USD);
         assertThat(ls1.getStudent()).isNotNull();
@@ -77,7 +78,6 @@ public class DataJpaTestSetupTest {
 
         LessonStudent lsFree = entityManager.find(LessonStudent.class, 3L);
         assertThat(lsFree).isNotNull();
-        assertThat(lsFree.getPaymentStatus()).isEqualTo(PaymentStatus.FREE);
         assertThat(lsFree.getPrice()).isEqualByComparingTo(BigDecimal.ZERO);
         assertThat(lsFree.getCurrency()).isEqualTo(Currency.PLN);
         assertThat(lsFree.getStudent()).isNotNull();
@@ -108,33 +108,15 @@ public class DataJpaTestSetupTest {
     }
 
     @Test
-    void whenBalancesAreLoaded_thenVerifyDetailsAndRelationships() {
-        Balance balance1 = entityManager.find(Balance.class, 1L);
-        assertThat(balance1).isNotNull();
-        assertThat(balance1.getAmount()).isEqualByComparingTo(new BigDecimal("-5.00"));
-        assertThat(balance1.getCurrency()).isEqualTo(Currency.USD);
-        assertThat(balance1.getStudent()).isNotNull();
-        assertThat(balance1.getStudent().getId()).isEqualTo(1L);
-
-        Balance balance2 = entityManager.find(Balance.class, 2L);
-        assertThat(balance2).isNotNull();
-        assertThat(balance2.getAmount()).isEqualByComparingTo(new BigDecimal("10.00"));
-        assertThat(balance2.getCurrency()).isEqualTo(Currency.EUR);
-        assertThat(balance2.getStudent()).isNotNull();
-        assertThat(balance2.getStudent().getId()).isEqualTo(2L);
-
-        Balance balanceFreeStudent = entityManager.find(Balance.class, 3L);
-        assertThat(balanceFreeStudent).isNotNull();
-        assertThat(balanceFreeStudent.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
-        assertThat(balanceFreeStudent.getCurrency()).isEqualTo(Currency.PLN);
-        assertThat(balanceFreeStudent.getStudent()).isNotNull();
-        assertThat(balanceFreeStudent.getStudent().getId()).isEqualTo(3L);
-
-        Balance balanceInactiveStudent = entityManager.find(Balance.class, 5L);
-        assertThat(balanceInactiveStudent).isNotNull();
-        assertThat(balanceInactiveStudent.getAmount()).isEqualByComparingTo(new BigDecimal("30.00"));
-        assertThat(balanceInactiveStudent.getCurrency()).isEqualTo(Currency.EUR);
-        assertThat(balanceInactiveStudent.getStudent()).isNotNull();
-        assertThat(balanceInactiveStudent.getStudent().getId()).isEqualTo(5L);
+    void whenBalanceTransactionAreLoaded_thenVerifyDetailsAndRelationships() {
+        BalanceTransaction balanceTransaction = entityManager.find(BalanceTransaction.class, 1L);
+        assertThat(balanceTransaction).isNotNull();
+        assertThat(balanceTransaction.getTransactionDateTime()).isEqualTo(LocalDateTime.of(2025, 1, 1, 10, 0));
+        assertThat(balanceTransaction.getType()).isEqualTo(TransactionType.PAYMENT_RECEIVED);
+        assertThat(balanceTransaction.getAmount()).isEqualByComparingTo(new BigDecimal("10.00"));
+        assertThat(balanceTransaction.getCurrency()).isEqualTo(Currency.USD);
+        assertThat(balanceTransaction.getSourceEntity()).isEqualTo(TransactionSource.PAYMENT);
+        assertThat(balanceTransaction.getSourceId()).isEqualTo(1L);
+        assertThat(balanceTransaction.getStudent()).isNotNull();
     }
 }

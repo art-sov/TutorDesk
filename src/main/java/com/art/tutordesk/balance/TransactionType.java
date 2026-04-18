@@ -1,0 +1,17 @@
+package com.art.tutordesk.balance;
+
+public enum TransactionType {
+
+    BALANCE_MIGRATION,
+
+    LESSON_CHARGE,
+    LESSON_CHARGE_REVERSAL,
+    LESSON_CHARGE_ADJUSTMENT,
+
+    PAYMENT_RECEIVED,
+    PAYMENT_UPDATED,
+    PAYMENT_DELETED,
+
+    STUDENT_CREATED,
+    STUDENT_UPDATED
+}

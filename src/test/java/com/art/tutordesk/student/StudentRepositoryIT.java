@@ -27,6 +27,7 @@ public class StudentRepositoryIT {
         assertThat(activeStudents).isNotNull();
         assertThat(activeStudents).hasSize(4);
         assertThat(activeStudents.stream().allMatch(Student::isActive)).isTrue();
+        assertThat(activeStudents.stream().noneMatch(student -> student.getId().equals(5L))).isTrue(); // Explicitly check inactive student is not returned
     }
 
     @Test
@@ -56,18 +57,19 @@ public class StudentRepositoryIT {
         assertThat(foundStudents).hasSize(3);
         List<Long> foundIds = foundStudents.stream().map(Student::getId).collect(Collectors.toList());
         assertThat(foundIds).containsExactlyInAnyOrder(1L, 3L, 5L);
+        assertThat(foundStudents.stream().filter(s -> s.getId().equals(5L)).findFirst().orElseThrow().isActive()).isFalse();
     }
 
     @Test
     void whenFindAllByIdIn_withNonExistentIds_thenReturnsOnlyMatchingStudents() {
-        List<Long> idsToFind = Arrays.asList(1L, 99L, 3L, 100L);
+        List<Long> idsToFind = Arrays.asList(1L, 99L, 3L, 100L, 5L);
 
         List<Student> foundStudents = studentRepository.findAllByIdIn(idsToFind);
 
         assertThat(foundStudents).isNotNull();
-        assertThat(foundStudents).hasSize(2);
+        assertThat(foundStudents).hasSize(3);
         List<Long> foundIds = foundStudents.stream().map(Student::getId).collect(Collectors.toList());
-        assertThat(foundIds).containsExactlyInAnyOrder(1L, 3L);
+        assertThat(foundIds).containsExactlyInAnyOrder(1L, 3L, 5L);
     }
 
     @Test

@@ -1,44 +1,48 @@
 package com.art.tutordesk.lesson.service;
 
-import com.art.tutordesk.balance.BalanceService;
-import com.art.tutordesk.lesson.AttendanceStatus;
 import com.art.tutordesk.lesson.Lesson;
 import com.art.tutordesk.lesson.LessonStudent;
+import com.art.tutordesk.lesson.LessonStudentStatus;
 import com.art.tutordesk.lesson.PaymentStatus;
 import com.art.tutordesk.lesson.PaymentStatusUtil;
-import com.art.tutordesk.lesson.dto.AttendanceUpdateResponse;
 import com.art.tutordesk.lesson.dto.LessonListDTO;
 import com.art.tutordesk.lesson.dto.LessonProfileDTO;
+import com.art.tutordesk.lesson.dto.LessonStudentDto;
+import com.art.tutordesk.lesson.dto.LessonStudentUpdateDTO;
+import com.art.tutordesk.lesson.dto.LessonUpdateForm;
 import com.art.tutordesk.lesson.mapper.LessonMapper;
 import com.art.tutordesk.lesson.repository.LessonRepository;
+import com.art.tutordesk.lesson.repository.LessonStudentRepository;
 import com.art.tutordesk.payment.Currency;
+import com.art.tutordesk.payment.PaymentRepository;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -52,467 +56,231 @@ class LessonServiceTest {
     @Mock
     private LessonStudentService lessonStudentService;
     @Mock
-    private BalanceService balanceService;
-    @Mock
     private LessonMapper lessonMapper;
+    @Mock
+    private LessonBalanceService lessonBalanceService;
+    @Mock
+    private PaymentRepository paymentRepository;
+    @Mock
+    private LessonStudentRepository lessonStudentRepository;
     @Mock
     private PaymentStatusUtil paymentStatusUtil;
 
     @InjectMocks
     private LessonService lessonService;
 
-    private Lesson lesson1;
+    private Lesson lesson;
     private Student student1;
     private Student student2;
-    private Student student3;
 
     @BeforeEach
     void setUp() {
-        student1 = createStudent(1L, "John", "Doe", new BigDecimal("25.00"), new BigDecimal("20.00"), Currency.USD);
-        student2 = createStudent(2L, "Jane", "Smith", new BigDecimal("30.00"), new BigDecimal("24.00"), Currency.PLN);
-        student3 = createStudent(3L, "Charlie", "Brown", new BigDecimal("20.00"), new BigDecimal("15.00"), Currency.USD);
+        lesson = new Lesson();
+        lesson.setId(1L);
+        lesson.setLessonDate(LocalDate.now());
+        lesson.setLessonStudents(new HashSet<>());
 
-        lesson1 = new Lesson();
-        lesson1.setId(1L);
-        lesson1.setLessonDate(LocalDate.now());
-        lesson1.setLessonStudents(new HashSet<>());
+        student1 = new Student();
+        student1.setId(10L);
+        student1.setFirstName("John");
+        student1.setPriceIndividual(new BigDecimal("25.00"));
+        student1.setPriceGroup(new BigDecimal("20.00"));
+        student1.setCurrency(Currency.USD);
+
+        student2 = new Student();
+        student2.setId(11L);
+        student2.setFirstName("Jane");
+        student2.setPriceIndividual(new BigDecimal("30.00"));
+        student2.setPriceGroup(new BigDecimal("24.00"));
+        student2.setCurrency(Currency.USD);
+
+        // Lenient stubs for new dependencies to avoid breaking existing tests
+        lenient().when(lessonStudentRepository.findAllByStudentId(anyLong())).thenReturn(Collections.emptyList());
+        lenient().when(paymentRepository.findAllByStudentId(anyLong())).thenReturn(Collections.emptyList());
+        lenient().when(paymentStatusUtil.calculatePaymentStatuses(anyList(), anyList())).thenReturn(Collections.emptyMap());
+        lenient().when(paymentStatusUtil.calculateOverallLessonPaymentStatus(anyList())).thenReturn(PaymentStatus.UNPAID);
     }
 
-    // Test cases for getLessonsByDateRange
     @Test
-    void getLessonsByDateRange_shouldReturnEmptyList_whenNoLessonsExist() {
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().plusDays(1);
-        when(lessonRepository.findByLessonDateBetween(startDate, endDate)).thenReturn(Collections.emptyList());
+    void testGetLessonsByDateRange() {
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now().plusDays(1);
+        when(lessonRepository.findByLessonDateBetween(start, end)).thenReturn(List.of(lesson));
+        when(lessonMapper.toLessonListDTO(any())).thenReturn(new LessonListDTO());
 
-        List<LessonListDTO> result = lessonService.getLessonsByDateRange(startDate, endDate);
+        List<LessonListDTO> result = lessonService.getLessonsByDateRange(start, end);
 
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        verify(lessonRepository).findByLessonDateBetween(start, end);
+    }
+
+    @Test
+    void testGetLessonsByDateRange_Empty() {
+        LocalDate start = LocalDate.now();
+        LocalDate end = LocalDate.now().plusDays(1);
+        when(lessonRepository.findByLessonDateBetween(start, end)).thenReturn(List.of());
+
+        List<LessonListDTO> result = lessonService.getLessonsByDateRange(start, end);
+
+        assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(lessonRepository, times(1)).findByLessonDateBetween(startDate, endDate);
-        verify(lessonMapper, never()).toLessonListDTO(any(Lesson.class));
+        verify(lessonRepository).findByLessonDateBetween(start, end);
+        verify(lessonMapper, never()).toLessonListDTO(any());
     }
 
     @Test
-    void getLessonsByDateRange_shouldReturnLessons_whenLessonsExist() {
-        LocalDate startDate = LocalDate.now();
-        LocalDate endDate = LocalDate.now().plusDays(1);
+    void testGetLessonById_Found() {
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(lessonMapper.toLessonProfileDTO(lesson)).thenReturn(new LessonProfileDTO());
 
-        Lesson lesson2 = new Lesson();
-        lesson2.setId(2L);
-        lesson2.setLessonDate(LocalDate.now().plusDays(1));
-        lesson2.setLessonStudents(new HashSet<>());
-
-        List<Lesson> lessons = Arrays.asList(lesson1, lesson2);
-        when(lessonRepository.findByLessonDateBetween(startDate, endDate)).thenReturn(lessons);
-
-        // Mock mapper behavior
-        LessonListDTO dto1 = new LessonListDTO();
-        dto1.setId(lesson1.getId());
-        LessonListDTO dto2 = new LessonListDTO();
-        dto2.setId(lesson2.getId());
-
-        when(lessonMapper.toLessonListDTO(lesson1)).thenReturn(dto1);
-        when(lessonMapper.toLessonListDTO(lesson2)).thenReturn(dto2);
-
-        List<LessonListDTO> result = lessonService.getLessonsByDateRange(startDate, endDate);
-
-        assertEquals(2, result.size());
-
-        verify(lessonRepository, times(1)).findByLessonDateBetween(startDate, endDate);
-        verify(lessonMapper, times(1)).toLessonListDTO(lesson1);
-        verify(lessonMapper, times(1)).toLessonListDTO(lesson2);
-    }
-
-    // Test cases for getLessonById
-    @Test
-    void getLessonById_shouldThrowException_whenLessonNotFound() {
-        when(lessonRepository.findById(anyLong())).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> lessonService.getLessonById(1L));
-        verify(lessonRepository, times(1)).findById(anyLong());
-        verify(lessonMapper, never()).toLessonProfileDTO(any(Lesson.class));
-    }
-
-    @Test
-    void getLessonById_shouldReturnLessonWithCalculatedStatus_whenLessonFound() {
-        // Set up initial lesson1 with a student
-        LessonStudent ls1 = createLessonStudent(10L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
-        lesson1.getLessonStudents().add(ls1);
-
-        when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1));
-
-        // Mock mapper behavior
-        LessonProfileDTO dto = new LessonProfileDTO();
-        dto.setId(lesson1.getId());
-        dto.setPaymentStatus(PaymentStatus.PAID);
-
-        when(lessonMapper.toLessonProfileDTO(lesson1)).thenReturn(dto);
-        when(paymentStatusUtil.calculateAndSetLessonPaymentStatus(lesson1.getLessonStudents())).thenReturn(PaymentStatus.PAID);
         LessonProfileDTO result = lessonService.getLessonById(1L);
 
         assertNotNull(result);
-        assertEquals(lesson1.getId(), result.getId());
-        assertEquals(PaymentStatus.PAID, result.getPaymentStatus());
-        verify(lessonRepository, times(1)).findById(anyLong());
-        verify(lessonMapper, times(1)).toLessonProfileDTO(lesson1);
+        verify(lessonRepository).findById(1L);
     }
 
-    // Test cases for saveLesson
     @Test
-    void saveLesson_shouldSaveLessonWithoutStudents_whenNoStudentsSelected() {
-        when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
+    void testGetLessonById_WithStudentsAndStatuses() {
+        LessonStudent ls1 = createLessonStudent(100L, student1, lesson, new BigDecimal("25.00"), LessonStudentStatus.COMPLETED);
+        lesson.getLessonStudents().add(ls1);
+        
+        LessonProfileDTO dto = new LessonProfileDTO();
+        LessonStudentDto lsDto = new LessonStudentDto();
+        lsDto.setId(100L);
+        lsDto.setStatus(LessonStudentStatus.COMPLETED);
+        dto.setStudentAssociations(List.of(lsDto));
 
-        Lesson result = lessonService.saveLesson(new Lesson(), Collections.emptyList());
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(lessonMapper.toLessonProfileDTO(lesson)).thenReturn(dto);
+        when(paymentStatusUtil.calculatePaymentStatuses(anyList(), anyList())).thenReturn(Map.of(100L, PaymentStatus.PAID));
+        when(paymentStatusUtil.calculateOverallLessonPaymentStatus(anyList())).thenReturn(PaymentStatus.PAID);
+
+        LessonProfileDTO result = lessonService.getLessonById(1L);
 
         assertNotNull(result);
-        assertEquals(lesson1.getId(), result.getId());
-        verify(lessonRepository, times(1)).save(any(Lesson.class));
-        verify(studentService, never()).getStudentsByIds(any());
-        verify(lessonStudentService, never()).buildLessonStudent(any(Student.class), any(Lesson.class), any(PaymentStatus.class));
-        verify(lessonStudentService, never()).save(any(LessonStudent.class));
-        verify(balanceService, never()).changeBalance(anyLong(), any(Currency.class), any(BigDecimal.class));
-        verify(balanceService, never()).resyncPaymentStatus(anyLong());
+        assertEquals(PaymentStatus.PAID, result.getPaymentStatus());
+        assertEquals(PaymentStatus.PAID, result.getStudentAssociations().getFirst().getPaymentStatus());
     }
 
     @Test
-    void saveLesson_shouldSaveLessonWithOneStudent_individualPricing() {
-        List<Long> selectedStudentIds = Collections.singletonList(student1.getId());
+    void testGetLessonById_ScheduledStudentHasNoPaymentStatus() {
+        LessonStudent ls1 = createLessonStudent(100L, student1, lesson, new BigDecimal("25.00"), LessonStudentStatus.SCHEDULED);
+        lesson.getLessonStudents().add(ls1);
+        
+        LessonProfileDTO dto = new LessonProfileDTO();
+        LessonStudentDto lsDto = new LessonStudentDto();
+        lsDto.setId(100L);
+        lsDto.setStatus(LessonStudentStatus.SCHEDULED);
+        dto.setStudentAssociations(List.of(lsDto));
 
-        when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
-        when(studentService.getStudentsByIds(selectedStudentIds)).thenReturn(Collections.singletonList(student1));
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(lessonMapper.toLessonProfileDTO(lesson)).thenReturn(dto);
+
+        LessonProfileDTO result = lessonService.getLessonById(1L);
+
+        assertNotNull(result);
+        assertNull(result.getPaymentStatus());
+        assertNull(result.getStudentAssociations().getFirst().getPaymentStatus());
+    }
+
+    @Test
+    void testGetLessonById_NotFound() {
+        when(lessonRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class, () -> lessonService.getLessonById(1L));
+    }
+
+    @Test
+    void testSaveLesson() {
+        List<Long> studentIds = List.of(10L);
+        when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson);
+        when(studentService.getStudentsByIds(studentIds)).thenReturn(List.of(student1));
 
         LessonStudent ls = new LessonStudent();
         ls.setStudent(student1);
-        ls.setLesson(lesson1);
-        ls.setCurrency(student1.getCurrency());
-        ls.setPrice(student1.getPriceIndividual());
-        when(lessonStudentService.buildLessonStudent(eq(student1), eq(lesson1), any(PaymentStatus.class)))
-                .thenReturn(ls);
-        when(lessonStudentService.save(any(LessonStudent.class))).thenReturn(ls);
+        ls.setLesson(lesson);
+        when(lessonStudentService.buildLessonStudent(student1, lesson)).thenReturn(ls);
 
-        lessonService.saveLesson(new Lesson(), selectedStudentIds);
+        Lesson result = lessonService.saveLesson(lesson, studentIds);
 
-        ArgumentCaptor<LessonStudent> lessonStudentCaptor = ArgumentCaptor.forClass(LessonStudent.class);
-
-        verify(lessonStudentService, times(1)).save(lessonStudentCaptor.capture());
-        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceIndividual().negate()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
-        assertEquals(student1.getPriceIndividual(), lessonStudentCaptor.getValue().getPrice());
-        assertEquals(PaymentStatus.UNPAID, lessonStudentCaptor.getValue().getPaymentStatus());
+        assertNotNull(result);
+        verify(lessonRepository).save(lesson);
+        verify(lessonStudentService).save(any(LessonStudent.class));
+        assertEquals(new BigDecimal("25.00"), ls.getPrice());
     }
 
     @Test
-    void saveLesson_shouldSaveLessonWithMultipleStudents_groupPricing() {
-        List<Long> selectedStudentIds = Arrays.asList(student1.getId(), student2.getId());
+    void testUpdateLesson_RemoveStudent() {
+        LessonStudent ls1 = createLessonStudent(100L, student1, lesson, new BigDecimal("20.00"), LessonStudentStatus.COMPLETED);
+        LessonStudent ls2 = createLessonStudent(101L, student2, lesson, new BigDecimal("24.00"), LessonStudentStatus.COMPLETED);
+        lesson.getLessonStudents().addAll(Set.of(ls1, ls2));
 
-        when(lessonRepository.save(any(Lesson.class))).thenReturn(lesson1);
-        when(studentService.getStudentsByIds(selectedStudentIds)).thenReturn(Arrays.asList(student1, student2));
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
 
-        // Mock buildLessonStudent for student1
-        LessonStudent ls1 = new LessonStudent();
-        ls1.setStudent(student1);
-        ls1.setLesson(lesson1);
-        ls1.setCurrency(student1.getCurrency());
-        ls1.setPrice(student1.getPriceGroup());
-        when(lessonStudentService.buildLessonStudent(eq(student1), eq(lesson1), any(PaymentStatus.class))).thenReturn(ls1);
-        when(lessonStudentService.save(ls1)).thenReturn(ls1);
+        LessonUpdateForm form = new LessonUpdateForm();
+        form.setLessonDate(lesson.getLessonDate());
+        LessonStudentUpdateDTO update1 = new LessonStudentUpdateDTO();
+        update1.setStudentId(10L);
+        update1.setStatus(LessonStudentStatus.COMPLETED);
+        form.setStudentUpdates(List.of(update1));
 
-        // Mock buildLessonStudent for student2
-        LessonStudent ls2 = new LessonStudent();
-        ls2.setStudent(student2);
-        ls2.setLesson(lesson1);
-        ls2.setCurrency(student2.getCurrency());
-        ls2.setPrice(student2.getPriceGroup());
-        when(lessonStudentService.buildLessonStudent(eq(student2), eq(lesson1), any(PaymentStatus.class))).thenReturn(ls2);
-        when(lessonStudentService.save(ls2)).thenReturn(ls2);
+        lessonService.updateLesson(1L, form);
 
+        verify(lessonBalanceService).adjustBalanceForPriceAndStatusChange(ls2, ls2.getPrice(), LessonStudentStatus.CANCELED);
+        verify(lessonStudentService).delete(ls2);
+        verify(lessonBalanceService).adjustBalanceForPriceAndStatusChange(ls1, student1.getPriceIndividual(), LessonStudentStatus.COMPLETED);
 
-        lessonService.saveLesson(new Lesson(), selectedStudentIds);
-
-        ArgumentCaptor<LessonStudent> lessonStudentCaptor = ArgumentCaptor.forClass(LessonStudent.class);
-        verify(lessonStudentService, times(2)).save(lessonStudentCaptor.capture());
-
-        List<LessonStudent> capturedLessonStudents = lessonStudentCaptor.getAllValues();
-        Optional<LessonStudent> first = capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student1)).findFirst();
-        Optional<LessonStudent> second = capturedLessonStudents.stream().filter(lss -> lss.getStudent().equals(student2)).findFirst();
-
-        assertTrue(first.isPresent());
-        assertEquals(student1.getPriceGroup(), first.get().getPrice());
-
-        assertTrue(second.isPresent());
-        assertEquals(student2.getPriceGroup(), second.get().getPrice());
-
-        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceGroup().negate()));
-        verify(balanceService, times(1)).changeBalance(eq(student2.getId()), eq(student2.getCurrency()), eq(student2.getPriceGroup().negate()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student2.getId()));
-    }
-
-    // Test cases for updateLesson
-    @Test
-    void updateLesson_shouldThrowException_whenLessonNotFound() {
-        Lesson lessonToUpdate = new Lesson();
-        lessonToUpdate.setId(1L);
-        when(lessonRepository.findById(anyLong())).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> lessonService.updateLesson(lessonToUpdate, Collections.emptyList()));
-        verify(lessonRepository, times(1)).findById(anyLong());
+        assertEquals(1, lesson.getLessonStudents().size());
     }
 
     @Test
-    void updateLesson_shouldReverseDebitAndResync_whenStudentsAreRemoved() {
-        Lesson lessonToUpdate = new Lesson();
-        lessonToUpdate.setId(1L);
-        lessonToUpdate.setLessonDate(LocalDate.now().plusDays(5));
+    void testUpdateLesson_AddStudent() {
+        LessonStudent ls1 = createLessonStudent(100L, student1, lesson, new BigDecimal("25.00"), LessonStudentStatus.SCHEDULED);
+        lesson.getLessonStudents().add(ls1);
 
-        // Setup: existing lesson has one student
-        LessonStudent existingLs = createLessonStudent(10L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
-        lesson1.getLessonStudents().add(existingLs);
+        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson));
+        when(studentService.getStudentEntityById(11L)).thenReturn(student2);
 
-        when(lessonRepository.findById(anyLong())).thenReturn(Optional.of(lesson1));
+        LessonStudent ls2New = new LessonStudent();
+        ls2New.setStudent(student2);
+        ls2New.setLesson(lesson);
+        when(lessonStudentService.buildLessonStudent(student2, lesson)).thenReturn(ls2New);
 
-        lessonService.updateLesson(lessonToUpdate, Collections.emptyList());
+        LessonUpdateForm form = new LessonUpdateForm();
+        form.setLessonDate(lesson.getLessonDate());
+        LessonStudentUpdateDTO update1 = new LessonStudentUpdateDTO();
+        update1.setStudentId(10L);
+        update1.setStatus(LessonStudentStatus.SCHEDULED);
+        LessonStudentUpdateDTO update2 = new LessonStudentUpdateDTO();
+        update2.setStatus(LessonStudentStatus.SCHEDULED);
+        update2.setStudentId(11L);
+        form.setStudentUpdates(List.of(update1, update2));
 
-        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(student1.getPriceIndividual()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
-        assertTrue(lesson1.getLessonStudents().isEmpty());
+        lessonService.updateLesson(1L, form);
+
+        verify(lessonBalanceService).adjustBalanceForPriceAndStatusChange(ls1, student1.getPriceGroup(), LessonStudentStatus.SCHEDULED);
+        verify(lessonStudentService).save(ls2New);
+        assertEquals(new BigDecimal("24.00"), ls2New.getPrice());
+        verify(lessonBalanceService).adjustBalanceForPriceAndStatusChange(ls2New, student2.getPriceGroup(), LessonStudentStatus.SCHEDULED);
+
+        assertEquals(2, lesson.getLessonStudents().size());
     }
 
     @Test
-    void updateLesson_shouldHandleStudentChangesAndPricing() {
-        Lesson lessonToUpdate = new Lesson();
-        lessonToUpdate.setId(1L);
-
-        // Existing students in the lesson
-        Student studentToRemove = student3; // student3 from setUp
-        Student studentToKeep = student2; // student2 from setUp
-
-        LessonStudent lsToRemove = createLessonStudent(10L, lesson1, studentToRemove, PaymentStatus.UNPAID, studentToRemove.getPriceIndividual(), studentToRemove.getCurrency());
-        LessonStudent lsToKeep = createLessonStudent(11L, lesson1, studentToKeep, PaymentStatus.PAID, studentToKeep.getPriceIndividual(), studentToKeep.getCurrency());
-        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(lsToRemove, lsToKeep)));
-
-        // New student to add
-        Student studentToAdd = student1; // student1 from setUp
-        List<Long> updatedStudentIds = Arrays.asList(studentToKeep.getId(), studentToAdd.getId()); // Keep one, add one
-
-        // Mock the buildLessonStudent to return configurable objects
-        LessonStudent newLsToKeep = new LessonStudent();
-        newLsToKeep.setStudent(studentToKeep);
-        newLsToKeep.setLesson(lesson1);
-        newLsToKeep.setCurrency(studentToKeep.getCurrency());
-        newLsToKeep.setPrice(studentToKeep.getPriceGroup());
-        LessonStudent newLsToAdd = new LessonStudent();
-        newLsToAdd.setStudent(studentToAdd);
-        newLsToAdd.setLesson(lesson1);
-        newLsToAdd.setCurrency(studentToAdd.getCurrency());
-        newLsToAdd.setPrice(studentToAdd.getPriceGroup());
-
-        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson1));
-        when(studentService.getStudentsByIds(updatedStudentIds)).thenReturn(Arrays.asList(studentToKeep, studentToAdd));
-        when(lessonStudentService.buildLessonStudent(eq(studentToKeep), eq(lesson1), any(PaymentStatus.class))).thenReturn(newLsToKeep);
-        when(lessonStudentService.save(newLsToKeep)).thenReturn(newLsToKeep);
-        when(lessonStudentService.buildLessonStudent(eq(studentToAdd), eq(lesson1), any(PaymentStatus.class))).thenReturn(newLsToAdd);
-        when(lessonStudentService.save(newLsToAdd)).thenReturn(newLsToAdd);
-
-        lessonService.updateLesson(lessonToUpdate, updatedStudentIds);
-
-        // Verify balance changes
-        verify(balanceService, times(1)).changeBalance(eq(studentToRemove.getId()), eq(studentToRemove.getCurrency()), eq(studentToRemove.getPriceIndividual())); // Removed student's debit reversed
-        verify(balanceService, times(1)).changeBalance(eq(studentToKeep.getId()), eq(studentToKeep.getCurrency()), eq(studentToKeep.getPriceIndividual())); // Kept student's old debit reversed
-        verify(balanceService, times(1)).changeBalance(eq(studentToKeep.getId()), eq(studentToKeep.getCurrency()), eq(studentToKeep.getPriceGroup().negate())); // Kept student's new debit
-        verify(balanceService, times(1)).changeBalance(eq(studentToAdd.getId()), eq(studentToAdd.getCurrency()), eq(studentToAdd.getPriceGroup().negate())); // Added student's new debit
-
-        // Verify resync for all affected students
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToRemove.getId()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToKeep.getId()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(studentToAdd.getId()));
-
-        // Verify pricing logic
-        ArgumentCaptor<LessonStudent> lessonStudentCaptor = ArgumentCaptor.forClass(LessonStudent.class);
-        verify(lessonStudentService, times(2)).save(lessonStudentCaptor.capture());
-        List<LessonStudent> savedLessonStudents = lessonStudentCaptor.getAllValues();
-
-        // Since there are two students, both should have group pricing
-        Optional<LessonStudent> first = savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToAdd)).findFirst();
-        Optional<LessonStudent> second = savedLessonStudents.stream().filter(ls -> ls.getStudent().equals(studentToKeep)).findFirst();
-
-        assertTrue(first.isPresent());
-        assertTrue(second.isPresent());
-        assertEquals(studentToAdd.getPriceGroup(), first.get().getPrice());
-        assertEquals(studentToKeep.getPriceGroup(), second.get().getPrice());
-    }
-
-
-    // Test cases for deleteLesson
-    @Test
-    void deleteLesson_shouldReverseDebitsAndResyncForAffectedStudents() {
-        // Setup: Lesson has two students
-        LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
-        LessonStudent ls2 = createLessonStudent(2L, lesson1, student2, PaymentStatus.UNPAID, student2.getPriceIndividual(), student2.getCurrency());
-        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(ls1, ls2)));
-
-        when(lessonRepository.findById(1L)).thenReturn(Optional.of(lesson1));
-
+    void testDeleteLesson() {
         lessonService.deleteLesson(1L);
-
-        // Verify balance changes
-        verify(balanceService, times(1)).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), eq(ls1.getPrice()));
-        verify(balanceService, times(1)).changeBalance(eq(student2.getId()), eq(student2.getCurrency()), eq(ls2.getPrice()));
-
-        // Verify the lesson repository delete method was called
-        verify(lessonRepository, times(1)).deleteById(1L);
-
-        // Verify resync for all affected students
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student1.getId()));
-        verify(balanceService, times(1)).resyncPaymentStatus(eq(student2.getId()));
+        verify(lessonRepository).deleteById(1L);
     }
 
-    // test cases for updateAttendance
-    @Test
-    void updateAttendance_shouldSetPriceToZeroAndAdjustBalance_whenStudentIsAbsent() {
-        LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.UNPAID, student1.getPriceGroup(), student1.getCurrency());
-        ls1.setAttendanceStatus(AttendanceStatus.PRESENT);
-        ls1.setPaymentStatus(PaymentStatus.UNPAID);
-        LessonStudent ls2 = createLessonStudent(2L, lesson1, student2, PaymentStatus.UNPAID, student2.getPriceGroup(), student2.getCurrency());
-
-        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(ls1, ls2)));
-
-        LessonStudent ls1AfterSaveAndResync = createLessonStudent(1L, lesson1, student1, PaymentStatus.FREE, BigDecimal.ZERO, student1.getCurrency());
-        ls1AfterSaveAndResync.setAttendanceStatus(AttendanceStatus.ABSENT);
-        ls1AfterSaveAndResync.setPaymentStatus(PaymentStatus.FREE);
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId()))
-                .thenReturn(Optional.of(ls1)) // First call for initial state
-                .thenReturn(Optional.of(ls1AfterSaveAndResync)); // Second call for re-fetch after save/resync
-
-        AttendanceUpdateResponse attendanceUpdateResponse =
-                lessonService.updateAttendance(lesson1.getId(), student1.getId(), AttendanceStatus.ABSENT);
-
-        assertEquals(BigDecimal.ZERO, attendanceUpdateResponse.getNewPrice());
-        assertEquals(PaymentStatus.FREE.name(), attendanceUpdateResponse.getNewPaymentStatus());
-
-        assertEquals(AttendanceStatus.ABSENT, ls1AfterSaveAndResync.getAttendanceStatus());
-        assertEquals(BigDecimal.ZERO, ls1AfterSaveAndResync.getPrice());
-
-        // Verify balance change. the old price was 20. new is 0. diff is -20. negate is 20. so we credit 20.
-        ArgumentCaptor<BigDecimal> balanceChangeCaptor = ArgumentCaptor.forClass(BigDecimal.class);
-        verify(balanceService).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), balanceChangeCaptor.capture());
-        assertEquals(student1.getPriceGroup(), balanceChangeCaptor.getValue());
-
-        verify(balanceService).resyncPaymentStatus(student1.getId());
-        verify(lessonStudentService, times(1)).save(any(LessonStudent.class));
-    }
-
-    @Test
-    void updateAttendance_shouldDoNothing_whenStatusIsUnchanged() {
-        LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.PAID, student1.getPriceIndividual(), student1.getCurrency());
-        ls1.setAttendanceStatus(AttendanceStatus.PRESENT);
-        ls1.setPaymentStatus(PaymentStatus.PAID);
-        lesson1.getLessonStudents().add(ls1);
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId())).thenReturn(Optional.of(ls1));
-
-        AttendanceUpdateResponse attendanceUpdateResponse =
-                lessonService.updateAttendance(lesson1.getId(), student1.getId(), AttendanceStatus.PRESENT);
-
-        assertEquals(student1.getPriceIndividual(), attendanceUpdateResponse.getNewPrice());
-        assertEquals(PaymentStatus.PAID.name(), attendanceUpdateResponse.getNewPaymentStatus());
-
-        verify(balanceService, never()).changeBalance(any(), any(), any());
-        verify(balanceService, never()).resyncPaymentStatus(any());
-        verify(lessonStudentService, never()).save(any());
-    }
-
-    @Test
-    void updateAttendance_shouldRestorePriceAndAdjustBalance_whenStudentIsPresent() {
-        LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.FREE, BigDecimal.ZERO, student1.getCurrency());
-        ls1.setAttendanceStatus(AttendanceStatus.ABSENT);
-        LessonStudent ls2 = createLessonStudent(2L, lesson1, student2, PaymentStatus.UNPAID, student2.getPriceGroup(), student2.getCurrency());
-        lesson1.setLessonStudents(new HashSet<>(Arrays.asList(ls1, ls2)));
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId())).thenReturn(Optional.of(ls1));
-
-        LessonStudent ls1AfterResync = createLessonStudent(1L, lesson1, student1, PaymentStatus.UNPAID, student1.getPriceGroup(), student1.getCurrency());
-        ls1AfterResync.setAttendanceStatus(AttendanceStatus.PRESENT);
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId()))
-                .thenReturn(Optional.of(ls1))
-                .thenReturn(Optional.of(ls1AfterResync));
-
-        AttendanceUpdateResponse attendanceUpdateResponse =
-                lessonService.updateAttendance(lesson1.getId(), student1.getId(), AttendanceStatus.PRESENT);
-
-        assertEquals(student1.getPriceGroup(), attendanceUpdateResponse.getNewPrice());
-        assertEquals(PaymentStatus.UNPAID.name(), attendanceUpdateResponse.getNewPaymentStatus());
-        assertEquals(AttendanceStatus.PRESENT, ls1.getAttendanceStatus());
-        assertEquals(student1.getPriceGroup(), ls1.getPrice());
-
-        // Verify balance change. the old price was 0. new is 20. diff is 20. negate is -20. so we debit 20.
-        ArgumentCaptor<BigDecimal> balanceChangeCaptor = ArgumentCaptor.forClass(BigDecimal.class);
-        verify(balanceService).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), balanceChangeCaptor.capture());
-        assertEquals(student1.getPriceGroup().negate(), balanceChangeCaptor.getValue());
-
-        verify(balanceService).resyncPaymentStatus(student1.getId());
-        verify(lessonStudentService, times(1)).save(ls1);
-    }
-
-    @Test
-    void updateAttendance_shouldUseIndividualPrice_whenStudentIsPresentInIndividualLesson() {
-        LessonStudent ls1 = createLessonStudent(1L, lesson1, student1, PaymentStatus.FREE, BigDecimal.ZERO, student1.getCurrency());
-        ls1.setAttendanceStatus(AttendanceStatus.ABSENT);
-        lesson1.getLessonStudents().add(ls1);
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId()))
-                .thenReturn(Optional.of(ls1));
-
-        LessonStudent ls1AfterResync = createLessonStudent(1L, lesson1, student1, PaymentStatus.UNPAID, student1.getPriceIndividual(), student1.getCurrency());
-        ls1AfterResync.setAttendanceStatus(AttendanceStatus.PRESENT);
-
-        when(lessonStudentService.findByLessonIdAndStudentId(lesson1.getId(), student1.getId()))
-                .thenReturn(Optional.of(ls1))
-                .thenReturn(Optional.of(ls1AfterResync));
-
-        AttendanceUpdateResponse attendanceUpdateResponse =
-                lessonService.updateAttendance(lesson1.getId(), student1.getId(), AttendanceStatus.PRESENT);
-
-        assertEquals(student1.getPriceIndividual(), attendanceUpdateResponse.getNewPrice());
-        assertEquals(PaymentStatus.UNPAID.name(), attendanceUpdateResponse.getNewPaymentStatus());
-
-        ArgumentCaptor<BigDecimal> balanceChangeCaptor = ArgumentCaptor.forClass(BigDecimal.class);
-        verify(balanceService).changeBalance(eq(student1.getId()), eq(student1.getCurrency()), balanceChangeCaptor.capture());
-        assertEquals(student1.getPriceIndividual().negate(), balanceChangeCaptor.getValue());
-    }
-
-    @Test
-    void updateAttendance_shouldThrowException_whenLessonStudentNotFound() {
-        when(lessonStudentService.findByLessonIdAndStudentId(99L, 99L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class,
-                () -> lessonService.updateAttendance(99L, 99L, AttendanceStatus.ABSENT));
-
-        verify(balanceService, never()).changeBalance(any(), any(), any());
-        verify(lessonStudentService, never()).save(any());
-    }
-
-    private Student createStudent(Long id, String firstName, String lastName, BigDecimal priceIndividual, BigDecimal priceGroup, Currency currency) {
-        Student student = new Student();
-        student.setId(id);
-        student.setFirstName(firstName);
-        student.setLastName(lastName);
-        student.setPriceIndividual(priceIndividual);
-        student.setPriceGroup(priceGroup);
-        student.setCurrency(currency);
-        return student;
-    }
-
-    private LessonStudent createLessonStudent(Long id, Lesson lesson, Student student, PaymentStatus paymentStatus, BigDecimal price, Currency currency) {
+    private LessonStudent createLessonStudent(Long id, Student s, Lesson l, BigDecimal p, LessonStudentStatus st) {
         LessonStudent ls = new LessonStudent();
         ls.setId(id);
-        ls.setLesson(lesson);
-        ls.setStudent(student);
-        ls.setPaymentStatus(paymentStatus);
-        ls.setPrice(price);
-        ls.setCurrency(currency);
+        ls.setStudent(s);
+        ls.setLesson(l);
+        ls.setPrice(p);
+        ls.setStatus(st);
+        ls.setCurrency(s.getCurrency());
         return ls;
     }
 }

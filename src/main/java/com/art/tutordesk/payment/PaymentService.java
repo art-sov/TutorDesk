@@ -1,6 +1,8 @@
 package com.art.tutordesk.payment;
 
-import com.art.tutordesk.balance.BalanceService;
+import com.art.tutordesk.balance.BalanceTransactionService;
+import com.art.tutordesk.balance.TransactionSource;
+import com.art.tutordesk.balance.TransactionType;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.service.StudentService;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final BalanceService balanceService;
+    private final BalanceTransactionService balanceTransactionService;
     private final PaymentMapper paymentMapper;
     private final StudentService studentService;
 
@@ -51,8 +53,8 @@ public class PaymentService {
         log.info("Payment created: {id={}, studentId={}, amount={}, currency={}}",
                 savedPayment.getId(), student.getId(), savedPayment.getAmount(), savedPayment.getCurrency());
 
-        balanceService.changeBalance(student.getId(), savedPayment.getCurrency(), savedPayment.getAmount());
-        balanceService.resyncPaymentStatus(student.getId());
+        balanceTransactionService.createBalanceTransaction(student, TransactionType.PAYMENT_RECEIVED,
+                savedPayment.getCurrency(), TransactionSource.PAYMENT, savedPayment.getAmount(), savedPayment.getId());
 
         return paymentMapper.toPaymentDto(savedPayment);
     }
@@ -67,8 +69,6 @@ public class PaymentService {
                 });
 
         BigDecimal oldAmount = existingPayment.getAmount();
-        BigDecimal newAmount = paymentDto.getAmount();
-        BigDecimal delta = newAmount.subtract(oldAmount);
 
         Student student = studentService.getStudentEntityById(paymentDto.getStudentId());
 
@@ -77,10 +77,11 @@ public class PaymentService {
 
         Payment updatedPayment = paymentRepository.save(existingPayment);
         log.info("Payment updated: {id={}, studentId={}, oldAmount={}, newAmount={}, currency={}}",
-                updatedPayment.getId(), student.getId(), oldAmount, newAmount, updatedPayment.getCurrency());
+                updatedPayment.getId(), student.getId(), oldAmount, paymentDto.getAmount(), updatedPayment.getCurrency());
 
-        balanceService.changeBalance(student.getId(), updatedPayment.getCurrency(), delta);
-        balanceService.resyncPaymentStatus(student.getId());
+        BigDecimal amountDifference = paymentDto.getAmount().subtract(oldAmount);
+        balanceTransactionService.createBalanceTransaction(student, TransactionType.PAYMENT_UPDATED,
+                updatedPayment.getCurrency(), TransactionSource.PAYMENT, amountDifference, updatedPayment.getId());
 
         return paymentMapper.toPaymentDto(updatedPayment);
     }
@@ -95,16 +96,12 @@ public class PaymentService {
                 });
 
         Student student = payment.getStudent();
-        BigDecimal delta = payment.getAmount().negate();
-
-        log.info("Deleting payment: {id={}, studentId={}, amount={}, currency={}}",
-                payment.getId(), student.getId(), payment.getAmount(), payment.getCurrency());
-
-        balanceService.changeBalance(student.getId(), payment.getCurrency(), delta);
 
         paymentRepository.deleteById(id);
+        // Record a negative transaction for deleted payment
+        balanceTransactionService.createBalanceTransaction(student, TransactionType.PAYMENT_DELETED,
+                payment.getCurrency(), TransactionSource.PAYMENT, payment.getAmount().negate(), payment.getId());
 
-        balanceService.resyncPaymentStatus(student.getId());
         log.info("Payment with ID {} deleted successfully.", id);
     }
 }
