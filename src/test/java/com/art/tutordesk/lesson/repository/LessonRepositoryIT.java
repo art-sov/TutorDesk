@@ -1,10 +1,11 @@
 package com.art.tutordesk.lesson.repository;
 
+import com.art.tutordesk.BaseIntegrationTest;
 import com.art.tutordesk.lesson.Lesson;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.time.LocalDate;
@@ -14,9 +15,9 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Sql("/data-test.sql")
-public class LessonRepositoryIT {
+public class LessonRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
     private LessonRepository lessonRepository;

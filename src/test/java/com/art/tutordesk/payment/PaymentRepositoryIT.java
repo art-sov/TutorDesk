@@ -1,12 +1,13 @@
 package com.art.tutordesk.payment;
 
+import com.art.tutordesk.BaseIntegrationTest;
 import com.art.tutordesk.student.Student;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.math.BigDecimal;
@@ -18,9 +19,9 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Sql("/data-test.sql")
-public class PaymentRepositoryIT {
+public class PaymentRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
     private PaymentRepository paymentRepository;

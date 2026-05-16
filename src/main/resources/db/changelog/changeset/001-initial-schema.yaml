@@ -1,6 +1,6 @@
 databaseChangeLog:
   - changeSet:
-      id: 20251223-1
+      id: 20260516-initial-postgresql
       author: art-sov
       changes:
         - createTable:
@@ -22,11 +22,8 @@ databaseChangeLog:
                   name: age
                   type: INT
               - column:
-                  name: country
-                  type: VARCHAR(50)
-              - column:
                   name: created_at
-                  type: DATETIME
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
               - column:
@@ -40,30 +37,20 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: global_goal
-                  type: VARCHAR(500)
-              - column:
                   name: knowledge_level
                   type: VARCHAR(50)
               - column:
                   name: last_name
                   type: VARCHAR(50)
               - column:
-                  name: phone_number
-                  type: VARCHAR(50)
-              - column:
                   name: price_group
                   type: NUMERIC(38,2)
-                  constraints:
-                    nullable: false
               - column:
                   name: price_individual
                   type: NUMERIC(38,2)
-                  constraints:
-                    nullable: false
               - column:
                   name: updated_at
-                  type: DATETIME
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
 
@@ -82,14 +69,6 @@ databaseChangeLog:
                   type: DATE
                   constraints:
                     nullable: false
-              - column:
-                  name: start_time
-                  type: TIME
-                  constraints:
-                    nullable: false
-              - column:
-                  name: topic
-                  type: VARCHAR(200)
 
         - createTable:
             tableName: lesson_student
@@ -105,9 +84,6 @@ databaseChangeLog:
                   name: currency
                   type: VARCHAR(10)
               - column:
-                  name: payment_status
-                  type: VARCHAR(20)
-              - column:
                   name: price
                   type: NUMERIC(38,2)
               - column:
@@ -118,6 +94,12 @@ databaseChangeLog:
               - column:
                   name: student_id
                   type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(255)
+                  defaultValue: "SCHEDULED"
                   constraints:
                     nullable: false
 
@@ -138,7 +120,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: created_at
-                  type: DATETIME
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
               - column:
@@ -158,7 +140,7 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: updated_at
-                  type: DATETIME
+                  type: TIMESTAMP
                   constraints:
                     nullable: false
               - column:
@@ -168,7 +150,7 @@ databaseChangeLog:
                     nullable: false
 
         - createTable:
-            tableName: student_balance
+            tableName: balance_transactions
             columns:
               - column:
                   name: id
@@ -178,25 +160,36 @@ databaseChangeLog:
                     primaryKey: true
                     nullable: false
               - column:
-                  name: amount
-                  type: NUMERIC(38,2)
-              - column:
-                  name: currency
-                  type: VARCHAR(10)
-              - column:
-                  name: last_updated_at
-                  type: DATETIME
-              - column:
                   name: student_id
                   type: BIGINT
                   constraints:
                     nullable: false
-
-        - addUniqueConstraint:
-            columnNames: student_id, currency
-            constraintName: uk_student_balance_currency
-            tableName: student_balance
-
+              - column:
+                  name: transaction_datetime
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: amount
+                  type: DECIMAL(19, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency
+                  type: VARCHAR(10)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: source_entity
+                  type: VARCHAR(50)
+              - column:
+                  name: source_id
+                  type: BIGINT
 
         - addForeignKeyConstraint:
             baseColumnNames: lesson_id
@@ -217,8 +210,8 @@ databaseChangeLog:
             referencedColumnNames: id
             referencedTableName: students
         - addForeignKeyConstraint:
+            baseTableName: balance_transactions
             baseColumnNames: student_id
-            baseTableName: student_balance
-            constraintName: fk_balance_student
-            referencedColumnNames: id
             referencedTableName: students
+            referencedColumnNames: id
+            constraintName: fk_balance_transactions_student_id

@@ -12,8 +12,6 @@ jobs:
     env:
       APP_ADMIN_USERNAME: ${{ secrets.APP_ADMIN_USERNAME }}
       APP_ADMIN_PASSWORD: ${{ secrets.APP_ADMIN_PASSWORD }}
-      SPRING_DATASOURCE_USERNAME: ${{ secrets.SPRING_DATASOURCE_USERNAME }}
-      SPRING_DATASOURCE_PASSWORD: ${{ secrets.SPRING_DATASOURCE_PASSWORD }}
 
     steps:
       - name: Checkout code

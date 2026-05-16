@@ -2,8 +2,9 @@ package com.art.tutordesk.student;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import com.art.tutordesk.BaseIntegrationTest;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.util.Arrays;
@@ -13,9 +14,9 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Sql("/data-test.sql")
-public class StudentRepositoryIT {
+public class StudentRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
     private StudentRepository studentRepository;
