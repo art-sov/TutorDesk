@@ -1,5 +1,6 @@
 package com.art.tutordesk.integrationtest;
 
+import com.art.tutordesk.BaseIntegrationTest;
 import com.art.tutordesk.balance.BalanceQueryService;
 import com.art.tutordesk.config.SecurityConfig;
 import com.art.tutordesk.lesson.LessonStudentStatus;
@@ -16,7 +17,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,11 +35,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@ActiveProfiles("test")
 @Transactional
 @Import(SecurityConfig.class)
 @WithMockUser(username = "admin", roles = {"ADMIN"})
-public class StudentLessonFlowIT {
+public class StudentLessonFlowIT extends BaseIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

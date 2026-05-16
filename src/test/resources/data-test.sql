@@ -41,4 +41,8 @@ INSERT INTO balance_transactions (id, student_id, transaction_datetime, type, am
 (7, 1, '2025-02-01 10:00:00', 'LESSON_CHARGE', 20.00, 'USD', 'LESSON', 7),
 (8, 2, '2025-02-01 10:00:00', 'LESSON_CHARGE', 24.00, 'EUR', 'LESSON', 8);
 
+ALTER TABLE students ALTER COLUMN id RESTART WITH 6;
+ALTER TABLE lessons ALTER COLUMN id RESTART WITH 6;
+ALTER TABLE lesson_student ALTER COLUMN id RESTART WITH 9;
+ALTER TABLE payments ALTER COLUMN id RESTART WITH 7;
 ALTER TABLE balance_transactions ALTER COLUMN id RESTART WITH 9;

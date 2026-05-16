@@ -1,13 +1,14 @@
 package com.art.tutordesk.balance;
 
+import com.art.tutordesk.BaseIntegrationTest;
 import com.art.tutordesk.payment.Currency;
 import com.art.tutordesk.student.Student;
 import com.art.tutordesk.student.StudentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
 import java.math.BigDecimal;
@@ -19,9 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @DataJpaTest
-@ActiveProfiles("test")
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Sql("/data-test.sql")
-public class BalanceTransactionRepositoryIT {
+public class BalanceTransactionRepositoryIT extends BaseIntegrationTest {
 
     @Autowired
     private BalanceTransactionRepository balanceTransactionRepository;
